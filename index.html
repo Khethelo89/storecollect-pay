@@ -3,77 +3,109 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>StoreCollect Yoco Payment</title>
+  <title>StoreCollect Payment</title>
+  <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
       background-color: #f3f3f3;
+      padding: 2rem;
       text-align: center;
-      padding: 50px;
     }
-    .container {
-      background: #fff;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      display: inline-block;
+    form {
+      background: white;
+      padding: 2rem;
+      max-width: 400px;
+      margin: 0 auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 1rem;
     }
-    img {
-      width: 180px;
-      margin-bottom: 20px;
+    input, button {
+      padding: 0.7rem;
+      margin: 0.5rem 0;
+      width: 100%;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 0.5rem;
     }
-    h1 {
-      color: #222;
-    }
-    p {
-      color: #555;
-    }
-    button {
-      background-color: #0066ff;
-      color: white;
-      border: none;
-      padding: 14px 24px;
-      font-size: 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 20px;
-    }
-    button:hover {
-      background-color: #0051cc;
+    #message {
+      margin-top: 1rem;
+      color: green;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <img src="Logo.png" alt="StoreCollect Logo" />
-    <h1>Pay StoreCollect Securely</h1>
-    <p>Click the button below to pay using your card or mobile money via Yoco.</p>
-    <button onclick="payWithYoco()">Pay Now</button>
-  </div>
 
-  <!-- Yoco SDK -->
-  <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
+  <h2>Pay with Yoco</h2>
+  <form id="payment-form">
+    <input type="text" id="name" placeholder="Full Name" required />
+    <input type="email" id="email" placeholder="Email Address" required />
+    <input type="number" id="amount" placeholder="Amount (ZAR)" required />
+    <div id="card-frame"></div>
+    <button type="submit">Pay Now</button>
+    <div id="message"></div>
+  </form>
+
   <script>
-    const yoco = new window.YocoSDK({
-      publicKey: 'pk_test_1234567890abcdef' // Replace with your actual public key
+    const yoco = new YocoSDK({
+      publicKey: "pk_live_8f7b33803ol0djKa5724"
     });
 
-    function payWithYoco() {
-      yoco.showPopup({
-        amountInCents: 5500, // Amount in cents: 55.00 ZAR
-        currency: 'ZAR',
-        name: 'StoreCollect.net Payment',
-        description: 'Clothing Purchase',
-        callback: function (result) {
-          if (result.error) {
-            alert("Payment failed: " + result.error.message);
-          } else {
-            alert("Payment successful! Token: " + result.id);
-            // You can now send the token to your backend to complete the payment
-          }
+    const form = document.getElementById("payment-form");
+    const card = yoco.inline({
+      layout: "basic",
+      amountInCents: 0,
+      currency: "ZAR"
+    });
+    card.mount("#card-frame");
+
+    const webhookUrl = "PASTE_YOUR_MAKE_WEBHOOK_URL_HERE"; // Replace with real Make.com webhook URL
+
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById("name").value;
+      const email = document.getElementById("email").value;
+      const amount = parseFloat(document.getElementById("amount").value);
+
+      if (amount < 1) {
+        alert("Please enter a valid amount.");
+        return;
+      }
+
+      try {
+        const token = await card.createToken();
+        if (token.error) {
+          alert("Payment error: " + token.error.message);
+          return;
         }
-      });
-    }
+
+        // Send payment token to Make.com
+        const payload = {
+          name,
+          email,
+          amount,
+          yoco_token: token.id
+        };
+
+        await fetch(webhookUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        document.getElementById("message").innerText = "Payment successful. Thank you!";
+        form.reset();
+        card.unmount();
+        card.mount("#card-frame");
+
+      } catch (err) {
+        alert("Something went wrong: " + err.message);
+      }
+    });
   </script>
+
 </body>
 </html>
