@@ -27,8 +27,8 @@
           if (result.error) {
             alert("Payment failed: " + result.error.message);
           } else {
-            alert("Payment successful! Token: " + result.id);
-            // Here you would send the token to your server or Make.com
+            alert("✅ Payment successful! Token: " + result.id);
+            // You will use result.id (token) in Make.com
           }
         }
       });
