@@ -3,109 +3,79 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>StoreCollect Payment</title>
-  <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
+  <title>StoreCollect Yoco Payment</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       background-color: #f3f3f3;
-      padding: 2rem;
       text-align: center;
+      padding: 50px;
     }
-    form {
-      background: white;
-      padding: 2rem;
-      max-width: 400px;
-      margin: 0 auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      border-radius: 1rem;
+    .container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: inline-block;
     }
-    input, button {
-      padding: 0.7rem;
-      margin: 0.5rem 0;
-      width: 100%;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 0.5rem;
+    button {
+      background-color: #00b386;
+      border: none;
+      color: white;
+      padding: 12px 20px;
+      text-align: center;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
     }
-    #message {
-      margin-top: 1rem;
-      color: green;
+    button:hover {
+      background-color: #009973;
     }
   </style>
+  <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
 </head>
 <body>
-
-  <h2>Pay with Yoco</h2>
-  <form id="payment-form">
-    <input type="text" id="name" placeholder="Full Name" required />
-    <input type="email" id="email" placeholder="Email Address" required />
-    <input type="number" id="amount" placeholder="Amount (ZAR)" required />
-    <div id="card-frame"></div>
-    <button type="submit">Pay Now</button>
-    <div id="message"></div>
-  </form>
+  <div class="container">
+    <h2>Pay for Hot Glasses 400</h2>
+    <p>Amount: R400</p>
+    <button id="payButton">Pay Now</button>
+  </div>
 
   <script>
-    const yoco = new YocoSDK({
-      publicKey: "pk_live_8f7b33803ol0djKa5724"
+    var yoco = new window.YocoSDK({
+      publicKey: 'pk_live_8f7b33803ol0djKa5724'
     });
 
-    const form = document.getElementById("payment-form");
-    const card = yoco.inline({
-      layout: "basic",
-      amountInCents: 0,
-      currency: "ZAR"
-    });
-    card.mount("#card-frame");
+    document.getElementById('payButton').addEventListener('click', function () {
+      yoco.showPopup({
+        amountInCents: 40000,
+        currency: 'ZAR',
+        name: 'StoreCollect - Hot Glasses 400',
+        callback: function (result) {
+          if (result.error) {
+            alert("Payment failed: " + result.error.message);
+          } else {
+            // ✅ Payment successful – send data to Make.com webhook
+            fetch("https://hook.eu2.make.com/7916upq1bnexvh7ac41y1ig69q3qljs2", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                product: "Hot Glasses 400",
+                amount: 400,
+                currency: "ZAR",
+                token: result.id,
+                email: "bonginhlanhladlamini434@gmail.com",  // You can replace this with dynamic user input later
+                status: "Paid"
+              })
+            });
 
-    const webhookUrl = "PASTE_YOUR_MAKE_WEBHOOK_URL_HERE"; // Replace with real Make.com webhook URL
-
-    form.addEventListener("submit", async function (e) {
-      e.preventDefault();
-
-      const name = document.getElementById("name").value;
-      const email = document.getElementById("email").value;
-      const amount = parseFloat(document.getElementById("amount").value);
-
-      if (amount < 1) {
-        alert("Please enter a valid amount.");
-        return;
-      }
-
-      try {
-        const token = await card.createToken();
-        if (token.error) {
-          alert("Payment error: " + token.error.message);
-          return;
+            alert("Payment successful! Reference: " + result.id);
+          }
         }
-
-        // Send payment token to Make.com
-        const payload = {
-          name,
-          email,
-          amount,
-          yoco_token: token.id
-        };
-
-        await fetch(webhookUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-
-        document.getElementById("message").innerText = "Payment successful. Thank you!";
-        form.reset();
-        card.unmount();
-        card.mount("#card-frame");
-
-      } catch (err) {
-        alert("Something went wrong: " + err.message);
-      }
+      });
     });
   </script>
-
 </body>
 </html>
