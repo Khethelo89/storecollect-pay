@@ -3,75 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>StoreCollect Yoco Payment</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f3f3f3;
-      text-align: center;
-      padding: 50px;
-    }
-    .container {
-      background: #fff;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      display: inline-block;
-    }
-    button {
-      background-color: #00b386;
-      border: none;
-      color: white;
-      padding: 12px 20px;
-      text-align: center;
-      font-size: 16px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #009973;
-    }
-  </style>
-  <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
+  <title>StoreCollect Yoco Test Payment</title>
 </head>
-<body>
-  <div class="container">
-    <h2>Pay for Hot Glasses 400</h2>
-    <p>Amount: R400</p>
-    <button id="payButton">Pay Now</button>
-  </div>
+<body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+  <h2>StoreCollect - Hot Glasses 400</h2>
+  <button id="pay-button" style="padding: 15px 30px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 5px;">
+    Pay R400.00
+  </button>
 
+  <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
   <script>
-    var yoco = new window.YocoSDK({
-      publicKey: 'pk_test_214ca77c878cc4578c5070b6e3c1435b'
+    const yoco = new YocoSDK({
+      publicKey: 'pk_test_a3abafa43ol0djK02ad4'
     });
 
-    document.getElementById('payButton').addEventListener('click', function () {
+    const payButton = document.getElementById('pay-button');
+    payButton.addEventListener('click', function () {
       yoco.showPopup({
-        amountInCents: 40000,
+        amountInCents: 40000, // R400.00
         currency: 'ZAR',
         name: 'StoreCollect - Hot Glasses 400',
         callback: function (result) {
           if (result.error) {
             alert("Payment failed: " + result.error.message);
           } else {
-            // ✅ Payment successful – send data to Make.com webhook
-            fetch("https://hook.eu2.make.com/7916upq1bnexvh7ac41y1ig69q3qljs2", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                product: "Hot Glasses 400",
-                amount: 400,
-                currency: "ZAR",
-                token: result.id,
-                email: "bonginhlanhladlamini434@gmail.com",  // You can replace this with dynamic user input later
-                status: "Paid"
-              })
-            });
-
-            alert("Payment successful! Reference: " + result.id);
+            alert("Payment successful! Token: " + result.id);
+            // Here you would send the token to your server or Make.com
           }
         }
       });
