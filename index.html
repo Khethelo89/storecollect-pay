@@ -3,16 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>StoreCollect Yoco Test Payment</title>
+  <title>StoreCollect Payment</title>
 </head>
 <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-  <h2>StoreCollect - Hot Glasses 400</h2>
+
+  <h2 id="product-name">Loading...</h2>
   <button id="pay-button" style="padding: 15px 30px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 5px;">
-    Pay R400.00
+    Loading...
   </button>
 
   <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
   <script>
+    // Parse product and amount from URL
+    const params = new URLSearchParams(window.location.search);
+    const product = params.get('product') || "Unknown Product";
+    const amount = parseFloat(params.get('amount')) || 0;
+
+    // Update page
+    document.getElementById("product-name").innerText = `${product} - R${amount.toFixed(2)}`;
+    document.getElementById("pay-button").innerText = `Pay R${amount.toFixed(2)}`;
+
+    // Yoco Setup
     const yoco = new YocoSDK({
       publicKey: 'pk_test_a3abafa43ol0djK02ad4'
     });
@@ -20,19 +31,20 @@
     const payButton = document.getElementById('pay-button');
     payButton.addEventListener('click', function () {
       yoco.showPopup({
-        amountInCents: 40000, // R400.00
+        amountInCents: amount * 100,
         currency: 'ZAR',
-        name: 'StoreCollect - Hot Glasses 400',
+        name: `StoreCollect - ${product}`,
         callback: function (result) {
           if (result.error) {
             alert("Payment failed: " + result.error.message);
           } else {
             alert("✅ Payment successful! Token: " + result.id);
-            // You will use result.id (token) in Make.com
+            // Later: send this info to Make.com
           }
         }
       });
     });
   </script>
+
 </body>
 </html>
