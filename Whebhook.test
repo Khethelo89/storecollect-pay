@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Webhook Test</title>
+</head>
+<body style="text-align:center; padding-top:50px;">
+  <h2>Webhook Test</h2>
+  <button onclick="sendWebhook()">Send Test Data</button>
+
+  <script>
+    function sendWebhook() {
+      const payload = {
+        test: true,
+        product: "Test Product",
+        amount: 123.45,
+        email: "test@example.com"
+      };
+
+      fetch("https://hook.eu2.make.com/7916upq1bnexvh7ac41y1ig69q3qljs2", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(response => {
+        alert("Webhook sent! Status: " + response.status);
+        console.log("Response:", response);
+      })
+      .catch(error => {
+        alert("Error sending webhook.");
+        console.error("Error:", error);
+      });
+    }
+  </script>
+</body>
+</html>
