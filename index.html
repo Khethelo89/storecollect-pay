@@ -1,35 +1,43 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>StoreCollect Payment</title>
+  <title>StoreCollect Yoco Payment</title>
 </head>
-<body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+<body style="font-family: Arial, sans-serif; text-align: center; padding: 40px;">
 
   <h2 id="product-name">Loading...</h2>
-  <button id="pay-button" style="padding: 15px 30px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 5px;">
+  <p id="amount-text"></p>
+
+  <input type="email" id="email" placeholder="Enter your email" required style="padding: 10px; margin-bottom: 20px; width: 250px;" /><br>
+
+  <button id="pay-button" style="padding: 12px 24px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 6px;">
     Loading...
   </button>
 
   <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
   <script>
-    // Parse product and amount from URL
     const params = new URLSearchParams(window.location.search);
     const product = params.get('product') || "Unknown Product";
     const amount = parseFloat(params.get('amount')) || 0;
 
-    // Update page
-    document.getElementById("product-name").innerText = `${product} - R${amount.toFixed(2)}`;
+    document.getElementById("product-name").innerText = product;
+    document.getElementById("amount-text").innerText = `Total: R${amount.toFixed(2)}`;
     document.getElementById("pay-button").innerText = `Pay R${amount.toFixed(2)}`;
 
-    // Yoco Setup
     const yoco = new YocoSDK({
       publicKey: 'pk_test_a3abafa43ol0djK02ad4'
     });
 
-    const payButton = document.getElementById('pay-button');
-    payButton.addEventListener('click', function () {
+    document.getElementById('pay-button').addEventListener('click', function () {
+      const email = document.getElementById('email').value;
+      if (!email) {
+        alert("Please enter your email before paying.");
+        return;
+      }
+
       yoco.showPopup({
         amountInCents: amount * 100,
         currency: 'ZAR',
@@ -38,8 +46,19 @@
           if (result.error) {
             alert("Payment failed: " + result.error.message);
           } else {
-            alert("✅ Payment successful! Token: " + result.id);
-            // Later: send this info to Make.com
+            alert("✅ Payment successful!");
+
+            // Send payment data to Make.com webhook
+            fetch("https://hook.eu2.make.com/7916upq1bnexvh7ac41y1ig69q3qljs2", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                token: result.id,
+                product: product,
+                amount: amount,
+                email: email
+              })
+            });
           }
         }
       });
