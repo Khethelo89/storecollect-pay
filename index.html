@@ -30,6 +30,15 @@
       color: #555;
       font-size: 18px;
     }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
     button {
       background-color: #0066ff;
       color: white;
@@ -38,7 +47,7 @@
       font-size: 16px;
       border-radius: 8px;
       cursor: pointer;
-      margin-top: 20px;
+      margin-top: 10px;
       width: 100%;
     }
     button:hover {
@@ -52,7 +61,12 @@
     <h1>Pay StoreCollect Securely</h1>
     <p id="productDesc">Loading product...</p>
     <p id="productAmount"></p>
-    <button id="payBtn" onclick="payWithYoco()">Pay Now</button>
+
+    <input type="text" id="customerName" placeholder="Full Name" required />
+    <input type="email" id="customerEmail" placeholder="Email Address" required />
+    <input type="tel" id="customerPhone" placeholder="Phone Number" required />
+
+    <button id="payBtn">Pay Now</button>
   </div>
 
   <!-- Yoco SDK -->
@@ -76,7 +90,16 @@
     document.getElementById('productDesc').textContent = product;
     document.getElementById('productAmount').textContent = 'Amount to pay: R ' + (amount / 100).toFixed(2);
 
-    function payWithYoco() {
+    document.getElementById('payBtn').addEventListener('click', function () {
+      const name = document.getElementById('customerName').value.trim();
+      const email = document.getElementById('customerEmail').value.trim();
+      const phone = document.getElementById('customerPhone').value.trim();
+
+      if (!name || !email || !phone) {
+        alert("Please fill in all the fields.");
+        return;
+      }
+
       yoco.showPopup({
         amountInCents: amount,
         currency: 'ZAR',
@@ -86,12 +109,33 @@
           if (result.error) {
             alert("Payment failed: " + result.error.message);
           } else {
-            alert("Payment successful! Token: " + result.id);
-            // TODO: send token to backend to finalize payment
+            // Send payment token + customer info to Make.com webhook
+            fetch("https://hook.eu2.make.com/uw1b0jdqmeuld8g0cvwkleuuh3wxr7u5", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                paymentToken: result.id,
+                productName: product,
+                amount: amount / 100,
+                currency: 'ZAR',
+                customerName: name,
+                customerEmail: email,
+                customerPhone: phone
+              })
+            })
+            .then(response => response.text())
+            .then(data => {
+              alert("Payment successful! Order details sent.");
+            })
+            .catch(err => {
+              alert("Payment succeeded but sending order failed: " + err);
+            });
           }
         }
       });
-    }
+    });
   </script>
 </body>
 </html>
