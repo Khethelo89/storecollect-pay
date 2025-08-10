@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>StoreCollect Yoco Payment</title>
   <style>
     body {
@@ -17,6 +17,7 @@
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       display: inline-block;
+      max-width: 400px;
     }
     img {
       width: 180px;
@@ -27,6 +28,7 @@
     }
     p {
       color: #555;
+      font-size: 18px;
     }
     button {
       background-color: #0066ff;
@@ -37,6 +39,7 @@
       border-radius: 8px;
       cursor: pointer;
       margin-top: 20px;
+      width: 100%;
     }
     button:hover {
       background-color: #0051cc;
@@ -45,33 +48,46 @@
 </head>
 <body>
   <div class="container">
-    <!-- Replace this link after uploading your Logo.png to GitHub -->
-    <img src = "https://raw.githubusercontent.com/Khethelo89/storecollect-pay/refs/heads/main/Logo.png" alt="StoreCollect Logo" />
-    
+    <img src="https://raw.githubusercontent.com/Khethelo89/storecollect-pay/main/Logo.png" alt="StoreCollect Logo" />
     <h1>Pay StoreCollect Securely</h1>
-    <p>Click the button below to pay using your card or mobile money via Yoco.</p>
-    <button onclick="payWithYoco()">Pay Now</button>
+    <p id="productDesc">Loading product...</p>
+    <p id="productAmount"></p>
+    <button id="payBtn" onclick="payWithYoco()">Pay Now</button>
   </div>
 
   <!-- Yoco SDK -->
   <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
   <script>
     const yoco = new window.YocoSDK({
-      publicKey: 'pk_test_a3abafa43ol0djK02ad4'// Replace with your actual public key
+      publicKey: 'pk_test_a3abafa43ol0djK02ad4' // Your actual public key
     });
+
+    function getQueryParams() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        product: params.get('product') || 'StoreCollect.net Payment',
+        amount: parseInt(params.get('amount')) || 5500 // default to 55.00 ZAR in cents
+      };
+    }
+
+    const { product, amount } = getQueryParams();
+
+    // Show product info on page
+    document.getElementById('productDesc').textContent = product;
+    document.getElementById('productAmount').textContent = 'Amount to pay: R ' + (amount / 100).toFixed(2);
 
     function payWithYoco() {
       yoco.showPopup({
-        amountInCents: 5500, // Amount in cents: 55.00 ZAR
+        amountInCents: amount,
         currency: 'ZAR',
         name: 'StoreCollect.net Payment',
-        description: 'Clothing Purchase',
+        description: product,
         callback: function (result) {
           if (result.error) {
             alert("Payment failed: " + result.error.message);
           } else {
             alert("Payment successful! Token: " + result.id);
-            // You can now send the token to your backend to complete the payment
+            // TODO: send token to backend to finalize payment
           }
         }
       });
