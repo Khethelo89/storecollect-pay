@@ -1,141 +1,70 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>StoreCollect Yoco Payment</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f3f3f3;
-      text-align: center;
-      padding: 50px;
-    }
-    .container {
-      background: #fff;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      display: inline-block;
-      max-width: 400px;
-    }
-    img {
-      width: 180px;
-      margin-bottom: 20px;
-    }
-    h1 {
-      color: #222;
-    }
-    p {
-      color: #555;
-      font-size: 18px;
-    }
-    input {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      font-size: 16px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
-    }
-    button {
-      background-color: #0066ff;
-      color: white;
-      border: none;
-      padding: 14px 24px;
-      font-size: 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 10px;
-      width: 100%;
-    }
-    button:hover {
-      background-color: #0051cc;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <img src="https://raw.githubusercontent.com/Khethelo89/storecollect-pay/main/Logo.png" alt="StoreCollect Logo" />
-    <h1>Pay StoreCollect Securely</h1>
-    <p id="productDesc">Loading product...</p>
-    <p id="productAmount"></p>
+<!-- ... everything in your <head> stays the same ... -->
 
-    <input type="text" id="customerName" placeholder="Full Name" required />
-    <input type="email" id="customerEmail" placeholder="Email Address" required />
-    <input type="tel" id="customerPhone" placeholder="Phone Number" required />
+<script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
+<script>
+  const yoco = new window.YocoSDK({
+    publicKey: 'pk_test_a3abafa43ol0djK02ad4' // Your actual Yoco public key
+  });
 
-    <button id="payBtn">Pay Now</button>
-  </div>
+  function getQueryParams() {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      product: params.get('product') || 'StoreCollect.net Payment',
+      amount: parseInt(params.get('amount')) || 5500 // default to R55.00 in cents
+    };
+  }
 
-  <!-- Yoco SDK -->
-  <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
-  <script>
-    const yoco = new window.YocoSDK({
-      publicKey: 'pk_test_a3abafa43ol0djK02ad4' // Your actual public key
-    });
+  const { product, amount } = getQueryParams();
 
-    function getQueryParams() {
-      const params = new URLSearchParams(window.location.search);
-      return {
-        product: params.get('product') || 'StoreCollect.net Payment',
-        amount: parseInt(params.get('amount')) || 5500 // default to 55.00 ZAR in cents
-      };
+  document.getElementById('productDesc').textContent = product;
+  document.getElementById('productAmount').textContent = 'Amount to pay: R ' + (amount / 100).toFixed(2);
+
+  document.getElementById('payBtn').addEventListener('click', function () {
+    const name = document.getElementById('customerName').value.trim();
+    const email = document.getElementById('customerEmail').value.trim();
+    const phone = document.getElementById('customerPhone').value.trim();
+
+    if (!name || !email || !phone) {
+      alert("Please fill in all the fields.");
+      return;
     }
 
-    const { product, amount } = getQueryParams();
-
-    // Show product info on page
-    document.getElementById('productDesc').textContent = product;
-    document.getElementById('productAmount').textContent = 'Amount to pay: R ' + (amount / 100).toFixed(2);
-
-    document.getElementById('payBtn').addEventListener('click', function () {
-      const name = document.getElementById('customerName').value.trim();
-      const email = document.getElementById('customerEmail').value.trim();
-      const phone = document.getElementById('customerPhone').value.trim();
-
-      if (!name || !email || !phone) {
-        alert("Please fill in all the fields.");
-        return;
-      }
-
-      yoco.showPopup({
-        amountInCents: amount,
-        currency: 'ZAR',
-        name: 'StoreCollect.net Payment',
-        description: product,
-        callback: function (result) {
-          if (result.error) {
-            alert("Payment failed: " + result.error.message);
-          } else {
-            // Send payment token + customer info to Make.com webhook
-            fetch("https://hook.eu2.make.com/uw1b0jdqmeuld8g0cvwkleuuh3wxr7u5", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                paymentToken: result.id,
-                productName: product,
-                amount: amount / 100,
-                currency: 'ZAR',
-                customerName: name,
-                customerEmail: email,
-                customerPhone: phone
-              })
+    yoco.showPopup({
+      amountInCents: amount,
+      currency: 'ZAR',
+      name: product,
+      description: `Payment for ${product}`,
+      callback: function (result) {
+        if (result.error) {
+          alert("Payment failed: " + result.error.message);
+        } else {
+          // Send payment & order details to Make.com webhook
+          fetch("https://hook.eu2.make.com/uw1b0jdqmeuld8g0cvwkleuuh3wxr7u5", { // Your webhook URL
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              product_name: product,
+              quantity: 1,
+              price: (amount / 100).toFixed(2),
+              currency: 'ZAR',
+              customer_name: name,
+              customer_email: email,
+              customer_phone: phone,
+              payment_id: result.id, // Yoco transaction ID
+              financial_status: "paid"
             })
-            .then(response => response.text())
-            .then(data => {
-              alert("Payment successful! Order details sent.");
-            })
-            .catch(err => {
-              alert("Payment succeeded but sending order failed: " + err);
-            });
-          }
+          })
+          .then(response => response.text())
+          .then(data => {
+            alert("✅ Payment successful! Your Shopify order is being created.");
+          })
+          .catch(err => {
+            alert("⚠ Payment succeeded but sending order failed: " + err);
+          });
         }
-      });
+      }
     });
-  </script>
-</body>
-</html>
+  });
+    </script>
