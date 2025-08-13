@@ -117,11 +117,19 @@
                 product_quantity: product.quantity,
                 product_price: product.price.toFixed(2),
                 currency: product.currency,
-                customer_name: name,
+                customer_first_name: firstname,
+                customer_last_name : lastname,
                 customer_email: email,
                 customer_phone: phone,
+                address: address1,
+                city:city,
+                province:province,
+                country: country,
+                zip: zipcode,
                 payment_id: result.id,
-                financial_status: "paid"
+                financial_status: "paid",
+                quantity: quantity
+                
               })
             })
             .then(res => {
