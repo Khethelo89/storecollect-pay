@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -59,9 +60,15 @@
     <h1 id="productName">Loading...</h1>
     <p id="productPrice"></p>
 
-    <input type="text" id="customerName" placeholder="Full Name" required />
+    <input type="text" id="customerFirstName" placeholder="First Name" required />
+    <input type="text" id="customerLastName" placeholder="Last Name" required />
     <input type="email" id="customerEmail" placeholder="Email Address" required />
     <input type="tel" id="customerPhone" placeholder="Phone Number" required />
+    <input type="text" id="customerAddress" placeholder="Street Address" required />
+    <input type="text" id="customerCity" placeholder="City" required />
+    <input type="text" id="customerProvince" placeholder="Province/State" required />
+    <input type="text" id="customerCountry" placeholder="Country" required />
+    <input type="text" id="customerZip" placeholder="ZIP / Postal Code" required />
 
     <button id="payBtn">Pay Now</button>
   </div>
@@ -82,7 +89,6 @@
     }
 
     const product = getProductFromUrl();
-
     document.getElementById('productName').textContent = product.name;
     document.getElementById('productPrice').textContent = `Amount to pay: R${(product.price * product.quantity).toFixed(2)}`;
 
@@ -91,11 +97,17 @@
     });
 
     document.getElementById('payBtn').addEventListener('click', () => {
-      const name = document.getElementById('customerName').value.trim();
+      const firstName = document.getElementById('customerFirstName').value.trim();
+      const lastName = document.getElementById('customerLastName').value.trim();
       const email = document.getElementById('customerEmail').value.trim();
       const phone = document.getElementById('customerPhone').value.trim();
+      const address1 = document.getElementById('customerAddress').value.trim();
+      const city = document.getElementById('customerCity').value.trim();
+      const province = document.getElementById('customerProvince').value.trim();
+      const country = document.getElementById('customerCountry').value.trim();
+      const zip = document.getElementById('customerZip').value.trim();
 
-      if (!name || !email || !phone) {
+      if (!firstName || !lastName || !email || !phone || !address1 || !city || !province || !country || !zip) {
         alert('Please fill in all the fields.');
         return;
       }
@@ -117,19 +129,17 @@
                 product_quantity: product.quantity,
                 product_price: product.price.toFixed(2),
                 currency: product.currency,
-                customer_first_name: firstname,
-                customer_last_name : lastname,
+                customer_first_name: firstName,
+                customer_last_name: lastName,
                 customer_email: email,
                 customer_phone: phone,
                 address: address1,
-                city:city,
-                province:province,
+                city: city,
+                province: province,
                 country: country,
-                zip: zipcode,
+                zip: zip,
                 payment_id: result.id,
-                financial_status: "paid",
-                quantity: quantity
-                
+                financial_status: "paid"
               })
             })
             .then(res => {
