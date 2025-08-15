@@ -36,7 +36,7 @@
 
 <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
 <script>
-const yocoPublicKey = 'b007a7-f0';
+const yocoPublicKey = 'pk_test_a3abafa43ol0djK02ad4';
 const backendWebhookUrl = 'https://storecollect-pay-phlm.vercel.app/api/yoco-webhook';
 
 function getProductFromUrl() {
@@ -81,7 +81,6 @@ document.getElementById('payBtn').addEventListener('click', () => {
       if (result.error) {
         alert('Payment failed: ' + result.error.message);
       } else {
-        // Send payment and customer info to your backend
         fetch(backendWebhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -105,11 +104,8 @@ document.getElementById('payBtn').addEventListener('click', () => {
           })
         })
         .then(res => {
-          if (res.ok) {
-            alert('✅ Payment successful! Shopify order created.');
-          } else {
-            alert('⚠ Payment succeeded but order creation failed.');
-          }
+          if (res.ok) alert('✅ Payment successful! Shopify order created.');
+          else alert('⚠ Payment succeeded but order creation failed.');
         })
         .catch(err => alert('Network error: ' + err));
       }
