@@ -38,9 +38,6 @@
 <script>
 const yocoPublicKey = 'pk_test_a3abafa43ol0djK02ad4';
 
-// Serverless backend endpoint for Shopify orders
-const backendWebhookUrl = 'https://your-backend.vercel.app/api/yoco-webhook';
-
 function getProductFromUrl() {
   const params = new URLSearchParams(window.location.search);
   return {
@@ -48,7 +45,7 @@ function getProductFromUrl() {
     price: parseFloat(params.get('price')) || 550.00,
     quantity: parseInt(params.get('quantity')) || 1,
     currency: params.get('currency') || 'ZAR',
-    variantId: params.get('variantId') || 'gid://shopify/ProductVariant/1234567890'
+    variantId: params.get('variantId') || null
   };
 }
 
@@ -83,11 +80,7 @@ document.getElementById('payBtn').addEventListener('click', () => {
       if (result.error) {
         alert('Payment failed: ' + result.error.message);
       } else {
-        // Payment succeeded, show confirmation
-        alert('✅ Payment successful! Your order will be processed.');
-
-        // Optional: You can also POST to your backend here if needed
-        // But Shopify order creation will happen automatically via Yoco webhook
+        alert(`✅ Payment successful for ${product.name}!`);
       }
     }
   });
