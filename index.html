@@ -36,7 +36,8 @@
 
 <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
 <script>
-const yocoPublicKey = 'pk_test_a3abafa43ol0djK02ad4';
+const yocoPublicKey = 'b007a7-f0';
+const backendWebhookUrl = 'https://storecollect-pay-phlm.vercel.app/api/yoco-webhook';
 
 function getProductFromUrl() {
   const params = new URLSearchParams(window.location.search);
@@ -80,7 +81,37 @@ document.getElementById('payBtn').addEventListener('click', () => {
       if (result.error) {
         alert('Payment failed: ' + result.error.message);
       } else {
-        alert(`✅ Payment successful for ${product.name}!`);
+        // Send payment and customer info to your backend
+        fetch(backendWebhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            product_name: product.name,
+            product_quantity: product.quantity,
+            product_price: product.price.toFixed(2),
+            currency: product.currency,
+            variantId: product.variantId,
+            customer_first_name: firstName,
+            customer_last_name: lastName,
+            customer_email: email,
+            customer_phone: phone,
+            address: address1,
+            city: city,
+            province: province,
+            country: country,
+            zip: zip,
+            payment_id: result.id,
+            financial_status: 'paid'
+          })
+        })
+        .then(res => {
+          if (res.ok) {
+            alert('✅ Payment successful! Shopify order created.');
+          } else {
+            alert('⚠ Payment succeeded but order creation failed.');
+          }
+        })
+        .catch(err => alert('Network error: ' + err));
       }
     }
   });
