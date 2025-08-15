@@ -37,7 +37,9 @@
 <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
 <script>
 const yocoPublicKey = 'pk_test_a3abafa43ol0djK02ad4';
-const makeWebhookUrl = 'https://hook.eu2.make.com/uw1b0jdqmeuld8g0cvwkleuuh3wxr7u5';
+
+// Serverless backend endpoint for Shopify orders
+const backendWebhookUrl = 'https://your-backend.vercel.app/api/yoco-webhook';
 
 function getProductFromUrl() {
   const params = new URLSearchParams(window.location.search);
@@ -81,37 +83,11 @@ document.getElementById('payBtn').addEventListener('click', () => {
       if (result.error) {
         alert('Payment failed: ' + result.error.message);
       } else {
-        // Send all data to Make.com
-        fetch(makeWebhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            product_name: product.name,
-            product_quantity: product.quantity,
-            product_price: product.price.toFixed(2),
-            currency: product.currency,
-            variant_id: product.variantId,
-            customer_first_name: firstName,
-            customer_last_name: lastName,
-            customer_email: email,
-            customer_phone: phone,
-            address: address1,
-            city: city,
-            province: province,
-            country: country,
-            zip: zip,
-            payment_id: result.id,
-            financial_status: "PAID"
-          })
-        })
-        .then(res => {
-          if(res.ok) {
-            alert('✅ Payment successful! Order is being created in Shopify.');
-          } else {
-            alert('⚠ Payment succeeded but sending order failed.');
-          }
-        })
-        .catch(err => alert('Network error: ' + err));
+        // Payment succeeded, show confirmation
+        alert('✅ Payment successful! Your order will be processed.');
+
+        // Optional: You can also POST to your backend here if needed
+        // But Shopify order creation will happen automatically via Yoco webhook
       }
     }
   });
