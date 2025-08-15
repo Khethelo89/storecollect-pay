@@ -58,4 +58,4 @@ export default async function handler(req, res) {
     console.error('Error processing webhook:', err);
     res.status(500).send('Internal Server Error');
   }
-               }
+}
