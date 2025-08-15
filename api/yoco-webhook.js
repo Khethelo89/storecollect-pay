@@ -1,19 +1,12 @@
 import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).send('Method Not Allowed');
-  }
+  if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
   try {
     const payload = req.body;
     console.log('Yoco webhook received:', payload);
 
-    // Optional: verify webhook signature (if you have the secret)
-    // const signature = req.headers['x-yoco-signature'];
-    // TODO: implement verification if needed
-
-    // Create Shopify order
     const shopifyResponse = await fetch(
       'https://your-store.myshopify.com/admin/api/2025-07/orders.json',
       {
@@ -29,7 +22,8 @@ export default async function handler(req, res) {
               {
                 title: payload.product_name,
                 quantity: payload.product_quantity,
-                price: payload.product_price
+                price: payload.product_price,
+                ...(payload.variantId ? { variant_id: payload.variantId } : {})
               }
             ],
             shipping_address: {
