@@ -1,38 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StoreCollect Pay - Webhook Test</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Webhook Test</title>
 </head>
 <body>
-  <h1>StoreCollect Pay</h1>
-  <p>Click the button below to test your webhook connection.</p>
+  <h1>Webhook Test Page</h1>
 
-  <button id="testFetch">Test Webhook</button>
+  <button id="getBtn">Send GET Request</button>
+  <button id="postBtn">Send POST Request</button>
+  <pre id="output"></pre>
 
   <script>
-    document.getElementById("testFetch").addEventListener("click", async () => {
+    const output = document.getElementById("output");
+    const webhookUrl = "https://storecollect-pay.vercel.app/api/yoco-webhook";
+
+    // GET request
+    document.getElementById("getBtn").addEventListener("click", async () => {
+      output.textContent = "Sending GET request...";
       try {
-        const response = await fetch("https://storecollect-pay.vercel.app/api/yoco-webhook", {
+        const res = await fetch(webhookUrl);
+        const text = await res.text();
+        output.textContent = `GET Status: ${res.status}\nResponse: ${text}`;
+      } catch (err) {
+        output.textContent = `GET failed: ${err.message}`;
+      }
+    });
+
+    // POST request
+    document.getElementById("postBtn").addEventListener("click", async () => {
+      output.textContent = "Sending POST request...";
+      try {
+        const res = await fetch(webhookUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({
-            message: "Hello from frontend",
-            orderId: "TEST123",
-            amount: 1000, // 10.00 in cents
-            currency: "ZAR"
-          })
+          body: JSON.stringify({ test: "Hello from POST" })
         });
-
-        const result = await response.json();
-        console.log("Response from webhook:", result);
-        alert("Webhook replied: " + JSON.stringify(result));
+        const text = await res.text();
+        output.textContent = `POST Status: ${res.status}\nResponse: ${text}`;
       } catch (err) {
-        console.error("Fetch error:", err);
-        alert("Error: " + err.message);
+        output.textContent = `POST failed: ${err.message}`;
       }
     });
   </script>
