@@ -1,142 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>StoreCollect Payment</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f3f3f3; padding: 50px; text-align: center; }
-    .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto; }
-    img { width: 180px; margin-bottom: 20px; }
-    input, button { width: 100%; padding: 12px; margin: 10px 0; font-size: 16px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
-    button { background: #0066ff; color: white; border: none; cursor: pointer; font-weight: bold; }
-    button:hover { background: #0051cc; }
-    h1 { margin-bottom: 5px; color: #222; }
-    p { margin-top: 0; color: #555; font-size: 18px; }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StoreCollect Pay - Webhook Test</title>
 </head>
 <body>
-<div class="container">
-  <img src="https://raw.githubusercontent.com/Khethelo89/storecollect-pay/main/Logo.png" alt="StoreCollect Logo" />
-  <h1 id="productName">Loading...</h1>
-  <p id="productPrice"></p>
+  <h1>StoreCollect Pay</h1>
+  <p>Click the button below to test your webhook connection.</p>
 
-  <input type="text" id="customerFirstName" placeholder="First Name" required />
-  <input type="text" id="customerLastName" placeholder="Last Name" required />
-  <input type="email" id="customerEmail" placeholder="Email Address" required />
-  <input type="tel" id="customerPhone" placeholder="Phone Number" required />
-  <input type="text" id="customerAddress" placeholder="Street Address" required />
-  <input type="text" id="customerCity" placeholder="City" required />
-  <input type="text" id="customerProvince" placeholder="Province/State" required />
-  <input type="text" id="customerCountry" placeholder="Country" required />
-  <input type="text" id="customerZip" placeholder="ZIP / Postal Code" required />
-
-  <button id="payBtn">Pay Now</button>
-  
-</div>
-
-<script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
-<script>
-const yocoPublicKey = 'pk_test_a3abafa43ol0djK02ad4';
-const backendWebhookUrl = 'https://storecollect-pay.vercel.app/api/yoco-webhook';
-
-function getProductFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  return {
-    name: params.get('product') || 'StoreCollect.net Payment',
-    price: parseFloat(params.get('price')) || 550.00,
-    quantity: parseInt(params.get('quantity')) || 1,
-    currency: params.get('currency') || 'ZAR',
-    variantId: params.get('variantId') || null
-  };
-}
-
-const product = getProductFromUrl();
-document.getElementById('productName').textContent = product.name;
-document.getElementById('productPrice').textContent = `Amount to pay: R${(product.price * product.quantity).toFixed(2)}`;
-
-const yoco = new window.YocoSDK({ publicKey: yocoPublicKey });
-
-document.getElementById('payBtn').addEventListener('click', () => {
-  const firstName = document.getElementById('customerFirstName').value.trim();
-  const lastName = document.getElementById('customerLastName').value.trim();
-  const email = document.getElementById('customerEmail').value.trim();
-  const phone = document.getElementById('customerPhone').value.trim();
-  const address1 = document.getElementById('customerAddress').value.trim();
-  const city = document.getElementById('customerCity').value.trim();
-  const province = document.getElementById('customerProvince').value.trim();
-  const country = document.getElementById('customerCountry').value.trim();
-  const zip = document.getElementById('customerZip').value.trim();
-
-  if (!firstName || !lastName || !email || !phone || !address1 || !city || !province || !country || !zip) {
-    alert('Please fill in all the fields.');
-    return;
-  }
-
-  yoco.showPopup({
-    amountInCents: Math.round(product.price * product.quantity * 100),
-    currency: product.currency,
-    name: product.name,
-    description: `Payment for ${product.name}`,
-    callback: function(result) {
-      if (result.error) {
-        alert('Payment failed: ' + result.error.message);
-      } else {
-        // Send payment & customer info to backend webhook
-        fetch(backendWebhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            product_name: product.name,
-            product_quantity: product.quantity,
-            product_price: product.price.toFixed(2),
-            currency: product.currency,
-            variantId: product.variantId,
-            customer_first_name: firstName,
-            customer_last_name: lastName,
-            customer_email: email,
-            customer_phone: phone,
-            address: address1,
-            city: city,
-            province: province,
-            country: country,
-            zip: zip,
-            payment_id: result.id,
-            financial_status: 'paid'
-          })
-        })
-        .then(res => res.json())
-        .then(data => {
-          alert('✅ Payment successful! Shopify order created.');
-          console.log('Webhook response:', data);
-        })
-        .catch(err => alert('Network error: ' + err));
-      }
-    }
-  });
-});
-</script>
   <button id="testFetch">Test Webhook</button>
 
-<script>
-document.getElementById("testFetch").addEventListener("click", async () => {
-  try {
-    const response = await fetch("https://storecollect-pay.vercel.app/api/yoco-webhook", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ message: "Hello from frontend" })
-    });
+  <script>
+    document.getElementById("testFetch").addEventListener("click", async () => {
+      try {
+        const response = await fetch("https://storecollect-pay.vercel.app/api/yoco-webhook", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: "Hello from frontend",
+            orderId: "TEST123",
+            amount: 1000, // 10.00 in cents
+            currency: "ZAR"
+          })
+        });
 
-    const result = await response.json();
-    console.log("Response from webhook:", result);
-    alert("Webhook replied: " + JSON.stringify(result));
-  } catch (err) {
-    console.error("Fetch error:", err);
-    alert("Error: " + err.message);
-  }
-});
-</script>
+        const result = await response.json();
+        console.log("Response from webhook:", result);
+        alert("Webhook replied: " + JSON.stringify(result));
+      } catch (err) {
+        console.error("Fetch error:", err);
+        alert("Error: " + err.message);
+      }
+    });
+  </script>
 </body>
 </html>
