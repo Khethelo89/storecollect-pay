@@ -2,49 +2,100 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Webhook Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StoreCollect Payment</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f3f3f3; padding: 50px; text-align: center; }
+    .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto; }
+    img { width: 180px; margin-bottom: 20px; }
+    input, button { width: 100%; padding: 12px; margin: 10px 0; font-size: 16px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
+    button { background: #0066ff; color: white; border: none; cursor: pointer; font-weight: bold; }
+    button:hover { background: #0051cc; }
+    h1 { margin-bottom: 5px; color: #222; }
+    p { margin-top: 0; color: #555; font-size: 18px; }
+  </style>
 </head>
 <body>
-  <h1>Webhook Test Page</h1>
+<div class="container">
+  <img src="https://raw.githubusercontent.com/Khethelo89/storecollect-pay/main/Logo.png" alt="StoreCollect Logo" />
+  <h1 id="productName">StoreCollect Payment</h1>
+  <p id="productPrice">Amount to pay: R550.00</p>
 
-  <button id="getBtn">Send GET Request</button>
-  <button id="postBtn">Send POST Request</button>
-  <pre id="output"></pre>
+  <input type="text" id="firstName" placeholder="First Name" required />
+  <input type="text" id="lastName" placeholder="Last Name" required />
+  <input type="email" id="email" placeholder="Email Address" required />
+  <input type="tel" id="phone" placeholder="Phone Number" required />
+  <input type="text" id="address1" placeholder="Street Address" required />
+  <input type="text" id="city" placeholder="City" required />
+  <input type="text" id="province" placeholder="Province/State" required />
+  <input type="text" id="country" placeholder="Country" required />
+  <input type="text" id="zip" placeholder="ZIP / Postal Code" required />
 
-  <script>
-    const output = document.getElementById("output");
-    const webhookUrl = "https://storecollect-pay.vercel.app/api/yoco-webhook";
+  <button id="payBtn">Pay Now</button>
+</div>
 
-    // GET request
-    document.getElementById("getBtn").addEventListener("click", async () => {
-      output.textContent = "Sending GET request...";
-      try {
-        const res = await fetch(webhookUrl);
-        const text = await res.text();
-        output.textContent = `GET Status: ${res.status}\nResponse: ${text}`;
-      } catch (err) {
-        output.textContent = `GET failed: ${err.message}`;
+<script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
+<script>
+const yoco = new window.YocoSDK({
+  publicKey: 'pk_test_a3abafa43ol0djK02ad4' // Your real Yoco public key
+});
+
+const backendWebhookUrl = 'https://storecollect-pay.vercel.app/api/yoco-webhook';
+
+document.getElementById('payBtn').addEventListener('click', () => {
+  const customer = {
+    first_name: document.getElementById('firstName').value.trim(),
+    last_name: document.getElementById('lastName').value.trim(),
+    email: document.getElementById('email').value.trim(),
+    phone: document.getElementById('phone').value.trim(),
+    address1: document.getElementById('address1').value.trim(),
+    city: document.getElementById('city').value.trim(),
+    province: document.getElementById('province').value.trim(),
+    country: document.getElementById('country').value.trim(),
+    zip: document.getElementById('zip').value.trim()
+  };
+
+  // Validate fields
+  if (Object.values(customer).some(v => !v)) {
+    alert('Please fill in all the fields.');
+    return;
+  }
+
+  // Show Yoco popup
+  yoco.showPopup({
+    amountInCents: 55000, // R550
+    currency: 'ZAR',
+    name: 'StoreCollect Payment',
+    description: 'Order Payment',
+    callback: async function(result) {
+      if (result.error) {
+        alert('Payment failed: ' + result.error.message);
+      } else {
+        try {
+          const response = await fetch(backendWebhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              token: result.id,
+              amount: 55000,
+              currency: 'ZAR',
+              orderId: '12345', // optional order ID
+              email: customer.email,
+              customer
+            })
+          });
+
+          const data = await response.json();
+          console.log('✅ Webhook response:', data);
+          alert('Payment successful! Your order is being processed.');
+        } catch (err) {
+          console.error('❌ Error sending to webhook:', err);
+          alert('Network error: ' + err.message);
+        }
       }
-    });
-
-    // POST request
-    document.getElementById("postBtn").addEventListener("click", async () => {
-      output.textContent = "Sending POST request...";
-      try {
-        const res = await fetch(webhookUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ test: "Hello from POST" })
-        });
-        const text = await res.text();
-        output.textContent = `POST Status: ${res.status}\nResponse: ${text}`;
-      } catch (err) {
-        output.textContent = `POST failed: ${err.message}`;
-      }
-    });
-  </script>
+    }
+  });
+});
+</script>
 </body>
 </html>
