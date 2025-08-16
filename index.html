@@ -81,6 +81,7 @@ document.getElementById('payBtn').addEventListener('click', () => {
       if (result.error) {
         alert('Payment failed: ' + result.error.message);
       } else {
+        // Send payment & customer info to backend webhook
         fetch(backendWebhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -103,9 +104,10 @@ document.getElementById('payBtn').addEventListener('click', () => {
             financial_status: 'paid'
           })
         })
-        .then(res => {
-          if (res.ok) alert('✅ Payment successful! Shopify order created.');
-          else alert('⚠ Payment succeeded but order creation failed.');
+        .then(res => res.json())
+        .then(data => {
+          alert('✅ Payment successful! Shopify order created.');
+          console.log('Webhook response:', data);
         })
         .catch(err => alert('Network error: ' + err));
       }
