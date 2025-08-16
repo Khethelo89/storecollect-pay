@@ -1,18 +1,26 @@
-export default function handler(req, res) {
-  // Allow requests from anywhere
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+export default async function handler(req, res) {
+  console.log("🔔 Incoming Webhook Request");
+  console.log("Method:", req.method);
+  console.log("Headers:", req.headers);
 
-  // Handle preflight OPTIONS request
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
+  if (req.method === "GET") {
+    console.log("✅ GET request received");
+    return res.status(200).send("Webhook is live! (GET)");
   }
 
   if (req.method === "POST") {
-    console.log("Webhook received:", req.body);
-    return res.status(200).json({ success: true, received: req.body });
+    try {
+      const body = req.body;
+      console.log("✅ POST request received");
+      console.log("Body:", body);
+
+      return res.status(200).json({ message: "POST received", data: body });
+    } catch (err) {
+      console.error("❌ Error parsing POST body:", err);
+      return res.status(500).send("Error handling POST request");
+    }
   }
 
-  return res.status(405).json({ error: "Method not allowed" });
+  res.setHeader("Allow", ["GET", "POST"]);
+  res.status(405).end(`Method ${req.method} Not Allowed`);
 }
