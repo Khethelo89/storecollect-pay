@@ -65,4 +65,64 @@ document.getElementById('payBtn').addEventListener('click', async () => {
   const city = document.getElementById('customerCity').value.trim();
   const province = document.getElementById('customerProvince').value.trim();
   const country = document.getElementById('customerCountry').value.trim();
-  const
+  const zip = document.getElementById('customerZip').value.trim();
+
+  if (!firstName || !lastName || !email || !phone || !address1 || !city || !province || !country || !zip) {
+    alert('Please fill in all the fields.');
+    return;
+  }
+
+  const customerData = { first_name: firstName, last_name: lastName, address1, city, province, country, zip, phone };
+
+  yoco.showPopup({
+    amountInCents: Math.round(product.price * product.quantity * 100),
+    currency: product.currency,
+    name: product.name,
+    description: `Payment for ${product.name}`,
+    callback: async function(result) {
+      if (result.error) {
+        alert('Payment failed: ' + result.error.message);
+      } else {
+        // Send to webhook
+        try {
+          const response = await fetch(backendWebhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              token: result.id,
+              amount: Math.round(product.price * product.quantity * 100),
+              currency: product.currency,
+              email,
+              customer: customerData,
+              product_name: product.name,
+              product_quantity: product.quantity,
+              product_price: product.price.toFixed(2),
+              variantId: product.variantId
+            })
+          });
+
+          console.log('Webhook raw response:', response);
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Webhook returned error:', errorText);
+            alert('⚠ Payment succeeded but sending order failed.\nCheck console for details.');
+            return;
+          }
+
+          const data = await response.json();
+          console.log('✅ Webhook response JSON:', data);
+          alert('✅ Payment successful! Your order is being processed.');
+
+        } catch (err) {
+          console.error('❌ Network or server error:', err);
+          alert('Network or server error occurred. Check console for details.');
+        }
+      }
+    }
+  });
+});
+</script>
+</body>
+</html>
+
