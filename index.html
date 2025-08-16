@@ -18,84 +18,51 @@
 <body>
 <div class="container">
   <img src="https://raw.githubusercontent.com/Khethelo89/storecollect-pay/main/Logo.png" alt="StoreCollect Logo" />
-  <h1 id="productName">StoreCollect Payment</h1>
-  <p id="productPrice">Amount to pay: R550.00</p>
+  <h1 id="productName">Loading...</h1>
+  <p id="productPrice"></p>
 
-  <input type="text" id="firstName" placeholder="First Name" required />
-  <input type="text" id="lastName" placeholder="Last Name" required />
-  <input type="email" id="email" placeholder="Email Address" required />
-  <input type="tel" id="phone" placeholder="Phone Number" required />
-  <input type="text" id="address1" placeholder="Street Address" required />
-  <input type="text" id="city" placeholder="City" required />
-  <input type="text" id="province" placeholder="Province/State" required />
-  <input type="text" id="country" placeholder="Country" required />
-  <input type="text" id="zip" placeholder="ZIP / Postal Code" required />
+  <input type="text" id="customerFirstName" placeholder="First Name" required />
+  <input type="text" id="customerLastName" placeholder="Last Name" required />
+  <input type="email" id="customerEmail" placeholder="Email Address" required />
+  <input type="tel" id="customerPhone" placeholder="Phone Number" required />
+  <input type="text" id="customerAddress" placeholder="Street Address" required />
+  <input type="text" id="customerCity" placeholder="City" required />
+  <input type="text" id="customerProvince" placeholder="Province/State" required />
+  <input type="text" id="customerCountry" placeholder="Country" required />
+  <input type="text" id="customerZip" placeholder="ZIP / Postal Code" required />
 
   <button id="payBtn">Pay Now</button>
 </div>
 
 <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
 <script>
-const yoco = new window.YocoSDK({
-  publicKey: 'pk_test_a3abafa43ol0djK02ad4' // Your real Yoco public key
-});
-
+const yocoPublicKey = 'pk_test_a3abafa43ol0djK02ad4'; // Your public key
 const backendWebhookUrl = 'https://storecollect-pay.vercel.app/api/yoco-webhook';
 
-document.getElementById('payBtn').addEventListener('click', () => {
-  const customer = {
-    first_name: document.getElementById('firstName').value.trim(),
-    last_name: document.getElementById('lastName').value.trim(),
-    email: document.getElementById('email').value.trim(),
-    phone: document.getElementById('phone').value.trim(),
-    address1: document.getElementById('address1').value.trim(),
-    city: document.getElementById('city').value.trim(),
-    province: document.getElementById('province').value.trim(),
-    country: document.getElementById('country').value.trim(),
-    zip: document.getElementById('zip').value.trim()
+function getProductFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    name: params.get('product') || 'StoreCollect.net Payment',
+    price: parseFloat(params.get('price')) || 550.00,
+    quantity: parseInt(params.get('quantity')) || 1,
+    currency: params.get('currency') || 'ZAR',
+    variantId: params.get('variantId') || null
   };
+}
 
-  // Validate fields
-  if (Object.values(customer).some(v => !v)) {
-    alert('Please fill in all the fields.');
-    return;
-  }
+const product = getProductFromUrl();
+document.getElementById('productName').textContent = product.name;
+document.getElementById('productPrice').textContent = `Amount to pay: R${(product.price * product.quantity).toFixed(2)}`;
 
-  // Show Yoco popup
-  yoco.showPopup({
-    amountInCents: 55000, // R550
-    currency: 'ZAR',
-    name: 'StoreCollect Payment',
-    description: 'Order Payment',
-    callback: async function(result) {
-      if (result.error) {
-        alert('Payment failed: ' + result.error.message);
-      } else {
-        try {
-          const response = await fetch(backendWebhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              token: result.id,
-              amount: 55000,
-              currency: 'ZAR',
-              orderId: '12345', // optional order ID
-              email: customer.email,
-              customer
-            })
-          });
+const yoco = new window.YocoSDK({ publicKey: yocoPublicKey });
 
-          const data = await response.json();
-          console.log('✅ Webhook response:', data);
-          alert('Payment successful! Your order is being processed.');
-        } catch (err) {
-          console.error('❌ Error sending to webhook:', err);
-          alert('Network error: ' + err.message);
-        }
-      }
-    }
-  });
-});
-</script>
-</body>
-</html>
+document.getElementById('payBtn').addEventListener('click', async () => {
+  const firstName = document.getElementById('customerFirstName').value.trim();
+  const lastName = document.getElementById('customerLastName').value.trim();
+  const email = document.getElementById('customerEmail').value.trim();
+  const phone = document.getElementById('customerPhone').value.trim();
+  const address1 = document.getElementById('customerAddress').value.trim();
+  const city = document.getElementById('customerCity').value.trim();
+  const province = document.getElementById('customerProvince').value.trim();
+  const country = document.getElementById('customerCountry').value.trim();
+  const
