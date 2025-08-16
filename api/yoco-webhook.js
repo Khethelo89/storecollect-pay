@@ -6,7 +6,7 @@ export default async function handler(req, res) {
     console.log('Yoco webhook received:', payload);
 
     const shopifyResponse = await fetch(
-      'https://storecollect-net.myshopify.com/admin/api/2025-07/orders.json',
+      'https://b007a7-f0.myshopify.com/admin/api/2025-07/orders.json',
       {
         method: 'POST',
         headers: {
