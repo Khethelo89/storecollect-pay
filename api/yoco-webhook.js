@@ -2,6 +2,14 @@
 import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
+  // Allow cross-origin requests from browser
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle preflight request
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
   // Only allow POST requests
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
@@ -9,12 +17,11 @@ export default async function handler(req, res) {
     const payload = req.body;
     console.log('📩 Yoco webhook received:', payload);
 
-    // Get environment variables
     const YOCO_SECRET_KEY = process.env.YOCO_SECRET_KEY;
     const SHOPIFY_TOKEN = process.env.SHOPIFY_TOKEN;
     const SHOPIFY_STORE = 'storecollect-net.myshopify.com'; // your Shopify domain
 
-    // Optional: verify payment with Yoco API
+    // Optional: verify payment with Yoco API using YOCO_SECRET_KEY
     // For testing, you can skip this step
 
     // Create Shopify order
@@ -26,7 +33,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         order: {
-          email: payload.email,
+          email: payload.customer_email,
           line_items: [
             {
               title: payload.product_name,
@@ -36,14 +43,14 @@ export default async function handler(req, res) {
             }
           ],
           shipping_address: {
-            first_name: payload.customer.first_name,
-            last_name: payload.customer.last_name,
-            address1: payload.customer.address1,
-            city: payload.customer.city,
-            province: payload.customer.province,
-            country: payload.customer.country,
-            zip: payload.customer.zip,
-            phone: payload.customer.phone
+            first_name: payload.customer_first_name,
+            last_name: payload.customer_last_name,
+            address1: payload.customer_address,
+            city: payload.customer_city,
+            province: payload.customer_province,
+            country: payload.customer_country,
+            zip: payload.customer_zip,
+            phone: payload.customer_phone
           },
           financial_status: 'paid'
         }
@@ -56,10 +63,10 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Failed to create Shopify order', details: errorText });
     }
 
-    const responseData = await shopifyResponse.json();
-    console.log('✅ Shopify order created:', responseData);
+    const shopifyData = await shopifyResponse.json();
+    console.log('✅ Shopify order created:', shopifyData);
 
-    res.status(200).json({ message: 'Webhook processed successfully', shopifyOrder: responseData });
+    res.status(200).json({ message: 'Webhook processed successfully', shopifyOrder: shopifyData });
 
   } catch (err) {
     console.error('❌ Error processing webhook:', err);
