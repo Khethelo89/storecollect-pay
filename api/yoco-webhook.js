@@ -1,69 +1,69 @@
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(200).send("Webhook is live! (GET)");
-  }
+// api/yoco-webhook.js
+import fetch from 'node-fetch';
 
-  const { token, amount, currency, orderId, email, customer } = req.body;
+export default async function handler(req, res) {
+  // Only allow POST requests
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
   try {
-    // 1️⃣ Charge the customer via Yoco
-    const yocoRes = await fetch("https://online.yoco.com/v1/charges/", {
-      method: "POST",
+    const payload = req.body;
+    console.log('📩 Yoco webhook received:', payload);
+
+    // Get environment variables
+    const YOCO_SECRET_KEY = process.env.YOCO_SECRET_KEY;
+    const SHOPIFY_TOKEN = process.env.SHOPIFY_TOKEN;
+    const SHOPIFY_STORE = 'storecollect-net.myshopify.com'; // your Shopify domain
+
+    // Optional: verify payment with Yoco API
+    // For testing, you can skip this step
+
+    // Create Shopify order
+    const shopifyResponse = await fetch(`https://${SHOPIFY_STORE}/admin/api/2025-07/orders.json`, {
+      method: 'POST',
       headers: {
-        "X-Auth-Secret-Key": process.env.YOCO_SECRET_KEY, // Vercel env
-        "Content-Type": "application/json"
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': SHOPIFY_TOKEN
       },
       body: JSON.stringify({
-        token,
-        amountInCents: amount,
-        currency
+        order: {
+          email: payload.email,
+          line_items: [
+            {
+              title: payload.product_name,
+              quantity: payload.product_quantity,
+              price: payload.product_price,
+              ...(payload.variantId ? { variant_id: payload.variantId } : {})
+            }
+          ],
+          shipping_address: {
+            first_name: payload.customer.first_name,
+            last_name: payload.customer.last_name,
+            address1: payload.customer.address1,
+            city: payload.customer.city,
+            province: payload.customer.province,
+            country: payload.customer.country,
+            zip: payload.customer.zip,
+            phone: payload.customer.phone
+          },
+          financial_status: 'paid'
+        }
       })
     });
 
-    const yocoData = await yocoRes.json();
-    console.log("✅ Yoco charge response:", yocoData);
-
-    if (yocoData.status !== "successful") {
-      return res.status(400).json({ error: "Payment failed", yocoData });
+    if (!shopifyResponse.ok) {
+      const errorText = await shopifyResponse.text();
+      console.error('❌ Shopify error:', errorText);
+      return res.status(500).json({ error: 'Failed to create Shopify order', details: errorText });
     }
 
-    // 2️⃣ Create Shopify order
-    const shopifyRes = await fetch(
-      "https://storecollect-net.myshopify.com/admin/api/2025-07/orders.json",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Shopify-Access-Token": process.env.SHOPIFY_TOKEN // Vercel env
-        },
-        body: JSON.stringify({
-          order: {
-            email: email,
-            line_items: [
-              {
-                title: "StoreCollect Order",
-                quantity: 1,
-                price: (amount / 100).toFixed(2)
-              }
-            ],
-            shipping_address: customer, // { first_name, last_name, address1, city, province, country, zip }
-            financial_status: "paid"
-          }
-        })
-      }
-    );
+    const responseData = await shopifyResponse.json();
+    console.log('✅ Shopify order created:', responseData);
 
-    const shopifyData = await shopifyRes.json();
-    console.log("✅ Shopify order response:", shopifyData);
-
-    res.status(200).json({
-      message: "Payment successful and Shopify order created",
-      yocoData,
-      shopifyData
-    });
+    res.status(200).json({ message: 'Webhook processed successfully', shopifyOrder: responseData });
 
   } catch (err) {
-    console.error("❌ Error processing payment:", err);
-    res.status(500).json({ error: "Server error", details: err.message });
+    console.error('❌ Error processing webhook:', err);
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
   }
-  }
+}
+
