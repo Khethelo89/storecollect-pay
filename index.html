@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>StoreCollect Payment</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f3f3f3; padding: 50px; text-align: center; }
-    .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto; }
-    img { width: 180px; margin-bottom: 20px; }
-    input, button { width: 100%; padding: 12px; margin: 10px 0; font-size: 16px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
-    button { background: #0066ff; color: white; border: none; cursor: pointer; font-weight: bold; }
-    button:hover { background: #0051cc; }
-    h1 { margin-bottom: 5px; color: #222; }
-    p { margin-top: 0; color: #555; font-size: 18px; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>StoreCollect Payment</title>
+<style>
+body { font-family: Arial, sans-serif; background: #f3f3f3; padding: 50px; text-align: center; }
+.container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto; }
+img { width: 180px; margin-bottom: 20px; }
+input, button { width: 100%; padding: 12px; margin: 10px 0; font-size: 16px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
+button { background: #0066ff; color: white; border: none; cursor: pointer; font-weight: bold; }
+button:hover { background: #0051cc; }
+h1 { margin-bottom: 5px; color: #222; }
+p { margin-top: 0; color: #555; font-size: 18px; }
+</style>
 </head>
 <body>
 <div class="container">
@@ -46,27 +46,15 @@ function getProductFromUrl() {
     price: parseFloat(params.get('price')) || 550.00,
     quantity: parseInt(params.get('quantity')) || 1,
     currency: params.get('currency') || 'ZAR',
-    variantId: params.get('variantId') || null
+    variantId: params.get('variantId') || null,
+    shippingCost: parseFloat(params.get('shipping')) || 0
   };
-}
-
-function calculateShipping(city, country) {
-  const saRates = {
-    'Johannesburg': 50,
-    'Cape Town': 60,
-    'Durban': 55,
-    'Pretoria': 50,
-    'Other': 70
-  };
-  if (country.toLowerCase() === 'south africa') {
-    return saRates[city] || saRates['Other'];
-  }
-  return 150; // international default
 }
 
 const product = getProductFromUrl();
 document.getElementById('productName').textContent = product.name;
-document.getElementById('productPrice').textContent = `Amount to pay: R${(product.price * product.quantity).toFixed(2)} + Free Shipping`;
+document.getElementById('productPrice').textContent = 
+  `Amount to pay: R${(product.price * product.quantity).toFixed(2)} (Shipping: Free)`; // Free for customer
 
 const yoco = new window.YocoSDK({ publicKey: yocoPublicKey });
 
@@ -86,14 +74,13 @@ document.getElementById('payBtn').addEventListener('click', () => {
     return;
   }
 
-  const shippingCost = calculateShipping(city, country);
-  const totalAmount = Math.round((product.price * product.quantity + shippingCost) * 100);
+  const totalAmount = (product.price * product.quantity) + product.shippingCost;
 
   yoco.showPopup({
-    amountInCents: totalAmount,
+    amountInCents: Math.round(totalAmount * 100),
     currency: product.currency,
     name: product.name,
-    description: `Payment for ${product.name}`,
+    description: `Payment for ${product.name} (Shipping included)`,
     callback: function(result) {
       if (result.error) {
         alert('Payment failed: ' + result.error.message);
@@ -105,9 +92,9 @@ document.getElementById('payBtn').addEventListener('click', () => {
             product_name: product.name,
             product_quantity: product.quantity,
             product_price: product.price.toFixed(2),
-            shipping_cost: shippingCost.toFixed(2),
             currency: product.currency,
             variantId: product.variantId,
+            shipping_cost: product.shippingCost.toFixed(2),
             customer_first_name: firstName,
             customer_last_name: lastName,
             customer_email: email,
@@ -121,16 +108,17 @@ document.getElementById('payBtn').addEventListener('click', () => {
             financial_status: 'paid'
           })
         })
-        .then(() => {
-          window.location.href = 'https://khethelo89.github.io/storecollect-pay/thank-you.html';
+        .then(res => {
+          if (res.ok) {
+            alert('✅ Payment successful! Shopify order created.');
+            window.location.href = 'thank-you.html';
+          } else {
+            alert('⚠ Payment succeeded but order creation failed.');
+          }
         })
-        .catch(() => {
-          window.location.href = 'https://khethelo89.github.io/storecollect-pay/thank-you.html';
-        });
+        .catch(err => alert('Network error: ' + err));
       }
     }
   });
 });
 </script>
-</body>
-</html>
