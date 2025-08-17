@@ -1,37 +1,39 @@
-<!DOCTYPE html>
+            <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>StoreCollect Payment</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f3f3f3; padding: 50px; text-align: center; }
-    .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto; }
-    img { width: 180px; margin-bottom: 20px; }
-    input, button { width: 100%; padding: 12px; margin: 10px 0; font-size: 16px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
-    button { background: #0066ff; color: white; border: none; cursor: pointer; font-weight: bold; }
-    button:hover { background: #0051cc; }
-    h1 { margin-bottom: 5px; color: #222; }
-    p { margin-top: 0; color: #555; font-size: 18px; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>StoreCollect Payment</title>
+<style>
+body { font-family: Arial, sans-serif; background: #f3f3f3; padding: 50px; text-align: center; }
+.container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto; }
+img { width: 180px; margin-bottom: 20px; }
+input, button { width: 100%; padding: 12px; margin: 10px 0; font-size: 16px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
+button { background: #0066ff; color: white; border: none; cursor: pointer; font-weight: bold; }
+button:hover { background: #0051cc; }
+h1 { margin-bottom: 5px; color: #222; }
+p { margin-top: 0; color: #555; font-size: 18px; }
+</style>
 </head>
 <body>
 <div class="container">
-  <img src="https://raw.githubusercontent.com/Khethelo89/storecollect-pay/main/Logo.png" alt="StoreCollect Logo" />
-  <h1 id="productName">Loading...</h1>
-  <p id="productPrice"></p>
+<img src="https://raw.githubusercontent.com/Khethelo89/storecollect-pay/main/Logo.png" alt="StoreCollect Logo" />
+<h1 id="productName">Loading...</h1>
+<p id="productPrice"></p>
 
-  <input type="text" id="customerFirstName" placeholder="First Name" required />
-  <input type="text" id="customerLastName" placeholder="Last Name" required />
-  <input type="email" id="customerEmail" placeholder="Email Address" required />
-  <input type="tel" id="customerPhone" placeholder="Phone Number" required />
-  <input type="text" id="customerAddress" placeholder="Street Address" required />
-  <input type="text" id="customerCity" placeholder="City" required />
-  <input type="text" id="customerProvince" placeholder="Province/State" required />
-  <input type="text" id="customerCountry" placeholder="Country" required />
-  <input type="text" id="customerZip" placeholder="ZIP / Postal Code" required />
+<input type="text" id="customerFirstName" placeholder="First Name" required />
+<input type="text" id="customerLastName" placeholder="Last Name" required />
+<input type="email" id="customerEmail" placeholder="Email Address" required />
+<input type="tel" id="customerPhone" placeholder="Phone Number" required />
+<input type="text" id="customerAddress" placeholder="Street Address" required />
+<input type="text" id="customerCity" placeholder="City" required />
+<input type="text" id="customerArea" placeholder="Area / Neighborhood" required />
+<input type="text" id="customerProvince" placeholder="Province/State" required />
+<input type="text" id="customerCountry" placeholder="Country" required />
+<input type="text" id="customerZip" placeholder="ZIP / Postal Code" required />
 
-  <button id="payBtn">Pay Now</button>
+<button id="payBtn">Pay Now</button>
+<div id="thankYouMessage" style="margin-top:20px; font-weight:bold;"></div>
 </div>
 
 <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
@@ -39,7 +41,6 @@
 const yocoPublicKey = 'pk_test_a3abafa43ol0djK02ad4';
 const backendWebhookUrl = 'https://storecollect-pay.vercel.app/api/yoco-webhook';
 
-// Get product info from URL parameters
 function getProductFromUrl() {
   const params = new URLSearchParams(window.location.search);
   return {
@@ -47,13 +48,26 @@ function getProductFromUrl() {
     price: parseFloat(params.get('price')) || 550.00,
     quantity: parseInt(params.get('quantity')) || 1,
     currency: params.get('currency') || 'ZAR',
-    variantId: params.get('variantId') || null
+    variantId: params.get('variantId') || null,
+    collection: params.get('collection') || 'Default'
   };
+}
+
+function calculateShipping(city, area, country) {
+  let shipping = 0;
+  if (country === 'South Africa') {
+    if (city === 'Johannesburg') shipping = 50;
+    else if (city === 'Cape Town') shipping = 60;
+    else shipping = 80;
+  } else {
+    shipping = 200; // international
+  }
+  return shipping;
 }
 
 const product = getProductFromUrl();
 document.getElementById('productName').textContent = product.name;
-document.getElementById('productPrice').textContent = `Amount to pay: R${(product.price * product.quantity).toFixed(2)}`;
+document.getElementById('productPrice').textContent = `Amount to pay: R${(product.price * product.quantity).toFixed(2)} (Free Shipping)`;
 
 const yoco = new window.YocoSDK({ publicKey: yocoPublicKey });
 
@@ -64,14 +78,17 @@ document.getElementById('payBtn').addEventListener('click', () => {
   const phone = document.getElementById('customerPhone').value.trim();
   const address1 = document.getElementById('customerAddress').value.trim();
   const city = document.getElementById('customerCity').value.trim();
+  const area = document.getElementById('customerArea').value.trim();
   const province = document.getElementById('customerProvince').value.trim();
   const country = document.getElementById('customerCountry').value.trim();
   const zip = document.getElementById('customerZip').value.trim();
 
-  if (!firstName || !lastName || !email || !phone || !address1 || !city || !province || !country || !zip) {
+  if (!firstName || !lastName || !email || !phone || !address1 || !city || !area || !province || !country || !zip) {
     alert('Please fill in all the fields.');
     return;
   }
+
+  const shippingCost = calculateShipping(city, area, country);
 
   yoco.showPopup({
     amountInCents: Math.round(product.price * product.quantity * 100),
@@ -82,7 +99,6 @@ document.getElementById('payBtn').addEventListener('click', () => {
       if (result.error) {
         alert('Payment failed: ' + result.error.message);
       } else {
-        // Send data to Vercel webhook
         fetch(backendWebhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -90,14 +106,17 @@ document.getElementById('payBtn').addEventListener('click', () => {
             product_name: product.name,
             product_quantity: product.quantity,
             product_price: product.price.toFixed(2),
+            shipping_cost: shippingCost,
             currency: product.currency,
             variantId: product.variantId,
+            collection: product.collection,
             customer_first_name: firstName,
             customer_last_name: lastName,
             customer_email: email,
             customer_phone: phone,
             customer_address: address1,
             customer_city: city,
+            customer_area: area,
             customer_province: province,
             customer_country: country,
             customer_zip: zip,
@@ -107,7 +126,10 @@ document.getElementById('payBtn').addEventListener('click', () => {
         })
         .then(res => {
           if (res.ok) {
-            alert('✅ Payment successful! Shopify order created.');
+            document.getElementById('thankYouMessage').innerHTML = `
+              ✅ Thank you ${firstName}! Your payment was successful.<br>
+              We will personally deliver your order to ${area}, ${city} within 1-4 days.
+            `;
           } else {
             alert('⚠ Payment succeeded but order creation failed.');
           }
@@ -120,4 +142,3 @@ document.getElementById('payBtn').addEventListener('click', () => {
 </script>
 </body>
 </html>
-
