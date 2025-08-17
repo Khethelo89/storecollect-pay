@@ -24,6 +24,12 @@ export default async function handler(req, res) {
                 ...(payload.variantId ? { variant_id: payload.variantId } : {})
               }
             ],
+            shipping_lines: [
+              {
+                title: "Shipping",
+                price: payload.shipping_cost || 0
+              }
+            ],
             shipping_address: {
               first_name: payload.customer_first_name,
               last_name: payload.customer_last_name,
@@ -50,4 +56,4 @@ export default async function handler(req, res) {
     console.error('Error processing webhook:', err);
     res.status(500).send('Internal Server Error');
   }
-                }
+    }
