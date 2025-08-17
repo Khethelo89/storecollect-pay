@@ -1,4 +1,4 @@
-            <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -57,88 +57,4 @@ function calculateShipping(city, area, country) {
   let shipping = 0;
   if (country === 'South Africa') {
     if (city === 'Johannesburg') shipping = 50;
-    else if (city === 'Cape Town') shipping = 60;
-    else shipping = 80;
-  } else {
-    shipping = 200; // international
-  }
-  return shipping;
-}
-
-const product = getProductFromUrl();
-document.getElementById('productName').textContent = product.name;
-document.getElementById('productPrice').textContent = `Amount to pay: R${(product.price * product.quantity).toFixed(2)} (Free Shipping)`;
-
-const yoco = new window.YocoSDK({ publicKey: yocoPublicKey });
-
-document.getElementById('payBtn').addEventListener('click', () => {
-  const firstName = document.getElementById('customerFirstName').value.trim();
-  const lastName = document.getElementById('customerLastName').value.trim();
-  const email = document.getElementById('customerEmail').value.trim();
-  const phone = document.getElementById('customerPhone').value.trim();
-  const address1 = document.getElementById('customerAddress').value.trim();
-  const city = document.getElementById('customerCity').value.trim();
-  const area = document.getElementById('customerArea').value.trim();
-  const province = document.getElementById('customerProvince').value.trim();
-  const country = document.getElementById('customerCountry').value.trim();
-  const zip = document.getElementById('customerZip').value.trim();
-
-  if (!firstName || !lastName || !email || !phone || !address1 || !city || !area || !province || !country || !zip) {
-    alert('Please fill in all the fields.');
-    return;
-  }
-
-  const shippingCost = calculateShipping(city, area, country);
-
-  yoco.showPopup({
-    amountInCents: Math.round(product.price * product.quantity * 100),
-    currency: product.currency,
-    name: product.name,
-    description: `Payment for ${product.name}`,
-    callback: function(result) {
-      if (result.error) {
-        alert('Payment failed: ' + result.error.message);
-      } else {
-        fetch(backendWebhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            product_name: product.name,
-            product_quantity: product.quantity,
-            product_price: product.price.toFixed(2),
-            shipping_cost: shippingCost,
-            currency: product.currency,
-            variantId: product.variantId,
-            collection: product.collection,
-            customer_first_name: firstName,
-            customer_last_name: lastName,
-            customer_email: email,
-            customer_phone: phone,
-            customer_address: address1,
-            customer_city: city,
-            customer_area: area,
-            customer_province: province,
-            customer_country: country,
-            customer_zip: zip,
-            payment_id: result.id,
-            financial_status: 'paid'
-          })
-        })
-        .then(res => {
-          if (res.ok) {
-            document.getElementById('thankYouMessage').innerHTML = `
-              ✅ Thank you ${firstName}! Your payment was successful.<br>
-              We will personally deliver your order to ${area}, ${city} within 1-4 days.
-            `;
-          } else {
-            alert('⚠ Payment succeeded but order creation failed.');
-          }
-        })
-        .catch(err => alert('Network error: ' + err));
-      }
-    }
-  });
-});
-</script>
-</body>
-</html>
+    else if (city === 'Cape Town')
