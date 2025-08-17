@@ -14,6 +14,13 @@ button:hover { background: #0051cc; }
 h1 { margin-bottom: 5px; color: #222; }
 p { margin-top: 0; color: #555; font-size: 18px; }
 </style>
+
+<script type="text/javascript" src="https://cdn.emailjs.com/dist/email.min.js"></script>
+<script type="text/javascript">
+  (function(){
+    emailjs.init('YOUR_EMAILJS_PUBLIC_KEY'); // Replace with your EmailJS public key
+  })();
+</script>
 </head>
 <body>
 <div class="container">
@@ -54,7 +61,7 @@ function getProductFromUrl() {
 const product = getProductFromUrl();
 document.getElementById('productName').textContent = product.name;
 document.getElementById('productPrice').textContent = 
-  `Amount to pay: R${(product.price * product.quantity).toFixed(2)} (Shipping: Free)`; // Free for customer
+  `Amount to pay: R${(product.price * product.quantity).toFixed(2)} (Shipping: Free)`; // Customer sees free
 
 const yoco = new window.YocoSDK({ publicKey: yocoPublicKey });
 
@@ -85,6 +92,7 @@ document.getElementById('payBtn').addEventListener('click', () => {
       if (result.error) {
         alert('Payment failed: ' + result.error.message);
       } else {
+        // Send to Shopify webhook
         fetch(backendWebhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -107,18 +115,36 @@ document.getElementById('payBtn').addEventListener('click', () => {
             payment_id: result.id,
             financial_status: 'paid'
           })
-        })
-        .then(res => {
-          if (res.ok) {
-            alert('✅ Payment successful! Shopify order created.');
-            window.location.href = 'thank-you.html';
-          } else {
-            alert('⚠ Payment succeeded but order creation failed.');
-          }
-        })
-        .catch(err => alert('Network error: ' + err));
+        }).then(res => {
+          if (res.ok) alert('✅ Payment successful! Shopify order created.');
+          else alert('⚠ Payment succeeded but order creation failed.');
+        });
+
+        // Send EmailJS notification
+        emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', {
+          product_name: product.name,
+          quantity: product.quantity,
+          price: (product.price * product.quantity).toFixed(2),
+          shipping_cost: product.shippingCost.toFixed(2),
+          customer_name: firstName + ' ' + lastName,
+          customer_email: email,
+          customer_phone: phone,
+          customer_address: address1,
+          customer_city: city,
+          customer_province: province,
+          customer_country: country,
+          customer_zip: zip
+        }).then(function(response) {
+          console.log('EmailJS sent successfully:', response.status, response.text);
+        }, function(error) {
+          console.error('EmailJS error:', error);
+        });
+
+        window.location.href = 'thank-you.html';
       }
     }
   });
 });
 </script>
+</body>
+  </html>
