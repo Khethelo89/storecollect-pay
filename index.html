@@ -1,150 +1,144 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StoreCollect Payment</title>
-<style>
-body { font-family: Arial, sans-serif; background: #f3f3f3; padding: 50px; text-align: center; }
-.container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto; }
-img { width: 180px; margin-bottom: 20px; }
-input, button { width: 100%; padding: 12px; margin: 10px 0; font-size: 16px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
-button { background: #0066ff; color: white; border: none; cursor: pointer; font-weight: bold; }
-button:hover { background: #0051cc; }
-h1 { margin-bottom: 5px; color: #222; }
-p { margin-top: 0; color: #555; font-size: 18px; }
-</style>
-
-<script type="text/javascript" src="https://cdn.emailjs.com/dist/email.min.js"></script>
-<script type="text/javascript">
-  (function(){
-    emailjs.init('YOUR_EMAILJS_PUBLIC_KEY'); // Replace with your EmailJS public key
-  })();
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+<script>
+  emailjs.init('YOUR_USER_ID'); // replace with your EmailJS user ID
 </script>
 </head>
 <body>
-<div class="container">
-  <img src="https://raw.githubusercontent.com/Khethelo89/storecollect-pay/main/Logo.png" alt="StoreCollect Logo" />
-  <h1 id="productName">Loading...</h1>
-  <p id="productPrice"></p>
 
-  <input type="text" id="customerFirstName" placeholder="First Name" required />
-  <input type="text" id="customerLastName" placeholder="Last Name" required />
-  <input type="email" id="customerEmail" placeholder="Email Address" required />
-  <input type="tel" id="customerPhone" placeholder="Phone Number" required />
-  <input type="text" id="customerAddress" placeholder="Street Address" required />
-  <input type="text" id="customerCity" placeholder="City" required />
-  <input type="text" id="customerProvince" placeholder="Province/State" required />
-  <input type="text" id="customerCountry" placeholder="Country" required />
-  <input type="text" id="customerZip" placeholder="ZIP / Postal Code" required />
+<h1>Processing Your Payment...</h1>
 
-  <button id="payBtn">Pay Now</button>
-</div>
-
-<script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
 <script>
-const yocoPublicKey = 'pk_test_a3abafa43ol0djK02ad4';
-const backendWebhookUrl = 'https://storecollect-pay.vercel.app/api/yoco-webhook';
-
-function getProductFromUrl() {
+  // -------------------------------
+  // 1️⃣ Capture Shopify Pay Now query params
+  // -------------------------------
   const params = new URLSearchParams(window.location.search);
-  return {
-    name: params.get('product') || 'StoreCollect.net Payment',
-    price: parseFloat(params.get('price')) || 550.00,
+
+  const product = {
+    name: params.get('product'),
+    price: parseFloat(params.get('price')) || 0,
     quantity: parseInt(params.get('quantity')) || 1,
-    currency: params.get('currency') || 'ZAR',
-    variantId: params.get('variantId') || null,
+    variantId: params.get('variantId'),
     shippingCost: parseFloat(params.get('shipping')) || 0
   };
-}
 
-const product = getProductFromUrl();
-document.getElementById('productName').textContent = product.name;
-document.getElementById('productPrice').textContent = 
-  `Amount to pay: R${(product.price * product.quantity).toFixed(2)} (Shipping: Free)`; // Customer sees free
+  // Collect customer info dynamically or hardcode for testing
+  const firstName = params.get('firstName') || "John";
+  const lastName = params.get('lastName') || "Doe";
+  const email = params.get('email') || "customer@example.com";
+  const phone = params.get('phone') || "";
+  const address1 = params.get('address1') || "";
+  const city = params.get('city') || "Other";
+  const province = params.get('province') || "";
+  const country = params.get('country') || "South Africa";
+  const zip = params.get('zip') || "";
 
-const yoco = new window.YocoSDK({ publicKey: yocoPublicKey });
+  // -------------------------------
+  // 2️⃣ Send POST to Yoco webhook
+  // -------------------------------
+  async function sendToWebhook(orderData) {
+    try {
+      const response = await fetch('https://your-vercel-domain.com/api/yoco-webhook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData)
+      });
 
-document.getElementById('payBtn').addEventListener('click', () => {
-  const firstName = document.getElementById('customerFirstName').value.trim();
-  const lastName = document.getElementById('customerLastName').value.trim();
-  const email = document.getElementById('customerEmail').value.trim();
-  const phone = document.getElementById('customerPhone').value.trim();
-  const address1 = document.getElementById('customerAddress').value.trim();
-  const city = document.getElementById('customerCity').value.trim();
-  const province = document.getElementById('customerProvince').value.trim();
-  const country = document.getElementById('customerCountry').value.trim();
-  const zip = document.getElementById('customerZip').value.trim();
-
-  if (!firstName || !lastName || !email || !phone || !address1 || !city || !province || !country || !zip) {
-    alert('Please fill in all the fields.');
-    return;
+      if (!response.ok) throw new Error(response.statusText);
+      const result = await response.json();
+      console.log('Webhook response:', result);
+      return result;
+    } catch (err) {
+      console.error('Webhook error:', err);
+      alert('⚠ Payment succeeded but webhook failed.');
+      return null;
+    }
   }
 
-  const totalAmount = (product.price * product.quantity) + product.shippingCost;
+  // -------------------------------
+  // 3️⃣ Process payment flow
+  // -------------------------------
+  async function processPayment() {
+    // Simulate receiving a payment result from Yoco
+    const paymentResult = { id: "SIMULATED_PAYMENT_ID" };
 
-  yoco.showPopup({
-    amountInCents: Math.round(totalAmount * 100),
-    currency: product.currency,
-    name: product.name,
-    description: `Payment for ${product.name} (Shipping included)`,
-    callback: function(result) {
-      if (result.error) {
-        alert('Payment failed: ' + result.error.message);
-      } else {
-        // Send to Shopify webhook
-        fetch(backendWebhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            product_name: product.name,
-            product_quantity: product.quantity,
-            product_price: product.price.toFixed(2),
-            currency: product.currency,
-            variantId: product.variantId,
-            shipping_cost: product.shippingCost.toFixed(2),
-            customer_first_name: firstName,
-            customer_last_name: lastName,
-            customer_email: email,
-            customer_phone: phone,
-            customer_address: address1,
-            customer_city: city,
-            customer_province: province,
-            customer_country: country,
-            customer_zip: zip,
-            payment_id: result.id,
-            financial_status: 'paid'
-          })
-        }).then(res => {
-          if (res.ok) alert('✅ Payment successful! Shopify order created.');
-          else alert('⚠ Payment succeeded but order creation failed.');
-        });
+    const orderData = {
+      product,
+      customer: { firstName, lastName, email, phone, address1, city, province, country, zip },
+      payment_id: paymentResult.id,
+      financial_status: 'paid'
+    };
 
-        // Send EmailJS notification
-        emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', {
-          product_name: product.name,
-          quantity: product.quantity,
-          price: (product.price * product.quantity).toFixed(2),
-          shipping_cost: product.shippingCost.toFixed(2),
-          customer_name: firstName + ' ' + lastName,
-          customer_email: email,
-          customer_phone: phone,
-          customer_address: address1,
-          customer_city: city,
-          customer_province: province,
-          customer_country: country,
-          customer_zip: zip
-        }).then(function(response) {
-          console.log('EmailJS sent successfully:', response.status, response.text);
-        }, function(error) {
-          console.error('EmailJS error:', error);
-        });
+    const webhookRes = await sendToWebhook(orderData);
 
-        window.location.href = 'thank-you.html';
-      }
+    if (webhookRes) {
+      // -------------------------------
+      // 4️⃣ Create Shopify order
+      // -------------------------------
+      fetch('https://your-shopify-store.myshopify.com/admin/api/2025-07/orders.json', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Access-Token': 'YOUR_SHOPIFY_ADMIN_API_TOKEN'
+        },
+        body: JSON.stringify({
+          order: {
+            line_items: [{ variant_id: product.variantId, quantity: product.quantity }],
+            shipping_address: {
+              first_name: firstName,
+              last_name: lastName,
+              address1: address1,
+              city: city,
+              province: province,
+              country: country,
+              zip: zip
+            },
+            financial_status: 'paid',
+            total_price: (product.price * product.quantity + product.shippingCost).toFixed(2)
+          }
+        })
+      }).then(res => {
+        if (res.ok) alert('✅ Payment successful! Shopify order created.');
+        else alert('⚠ Payment succeeded but Shopify order creation failed.');
+      });
+
+      // -------------------------------
+      // 5️⃣ Send EmailJS notification
+      // -------------------------------
+      emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', {
+        product_name: product.name,
+        quantity: product.quantity,
+        price: (product.price * product.quantity).toFixed(2),
+        shipping_cost: product.shippingCost.toFixed(2),
+        customer_name: firstName + ' ' + lastName,
+        customer_email: email,
+        customer_phone: phone,
+        customer_address: address1,
+        customer_city: city,
+        customer_province: province,
+        customer_country: country,
+        customer_zip: zip
+      }).then(response => {
+        console.log('EmailJS sent successfully:', response.status, response.text);
+      }, error => {
+        console.error('EmailJS error:', error);
+      });
+
+      // -------------------------------
+      // 6️⃣ Redirect to Thank You page
+      // -------------------------------
+      setTimeout(() => { window.location.href = 'thank-you.html'; }, 2000);
     }
-  });
-});
+  }
+
+  // Run payment process automatically
+  processPayment();
 </script>
+
 </body>
-  </html>
+</html>
