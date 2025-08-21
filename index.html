@@ -1,4 +1,4 @@
-      <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -46,10 +46,11 @@ p { margin-top: 0; color: #555; font-size: 18px; }
 const yocoPublicKey = 'pk_test_a3abafa43ol0djK02ad4';
 const backendWebhookUrl = 'https://storecollect-pay.vercel.app/api/yoco-webhook';
 
+// ✅ Updated: pick up both ?title=... and ?product=...
 function getProductFromUrl() {
   const params = new URLSearchParams(window.location.search);
   return {
-    name: params.get('product') || 'StoreCollect.net Payment',
+    name: params.get('title') || params.get('product') || 'StoreCollect.net Payment',
     price: parseFloat(params.get('price')) || 550.00,
     quantity: parseInt(params.get('quantity')) || 1,
     currency: params.get('currency') || 'ZAR',
@@ -60,8 +61,10 @@ function getProductFromUrl() {
 
 const product = getProductFromUrl();
 document.getElementById('productName').textContent = product.name;
+
+// ✅ Updated: show shipping cost dynamically
 document.getElementById('productPrice').textContent = 
-  `Amount to pay: R${(product.price * product.quantity).toFixed(2)} (Shipping: Free)`; // Customer sees free
+  `Amount to pay: R${(product.price * product.quantity + product.shippingCost).toFixed(2)} (Shipping: R${product.shippingCost.toFixed(2)})`;
 
 const yoco = new window.YocoSDK({ publicKey: yocoPublicKey });
 
@@ -147,4 +150,4 @@ document.getElementById('payBtn').addEventListener('click', () => {
 });
 </script>
 </body>
-  </html>
+</html>            
