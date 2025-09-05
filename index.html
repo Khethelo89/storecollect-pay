@@ -5,98 +5,114 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>StoreCollect Payment</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f3f3f3;
-      padding: 40px;
-      text-align: center;
-    }
-    .container {
-      background: #fff;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      max-width: 400px;
-      margin: auto;
-    }
-    h1 {
-      color: #333;
-      font-size: 22px;
-      margin-bottom: 20px;
-    }
-    .price {
-      font-size: 20px;
-      font-weight: bold;
-      margin: 15px 0;
-      color: #27ae60;
-    }
-    button {
-      background-color: #2ecc71;
-      color: #fff;
-      padding: 16px;
-      font-size: 16px;
-      font-weight: bold;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      width: 100%;
-    }
-    button:hover {
-      background-color: #27ae60;
-    }
+    body { font-family: Arial, sans-serif; background: #f3f3f3; padding: 40px; text-align: center; }
+    .container { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 420px; margin: auto; }
+    h1 { color: #333; font-size: 22px; margin-bottom: 20px; }
+    .price { font-size: 18px; margin: 12px 0; }
+    .total { font-size: 22px; font-weight: bold; color: #27ae60; margin: 20px 0; }
+    select, button { width: 100%; padding: 12px; margin-top: 12px; border-radius: 6px; font-size: 16px; }
+    button { background: #2ecc71; color: white; border: none; cursor: pointer; font-weight: bold; }
+    button:hover { background: #27ae60; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Complete Your Payment</h1>
-    <p class="price" id="amountDisplay"></p>
+    <h1 id="productName">Loading...</h1>
+    <p class="price" id="priceBase"></p>
+    <p class="price" id="priceShip"></p>
+    <p class="total" id="priceTotal">Calculating...</p>
+
+    <label for="province">Select Province</label>
+    <select id="province">
+      <option value="">-- Select Province --</option>
+      <option value="Gauteng">Gauteng</option>
+      <option value="Western Cape">Western Cape</option>
+      <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+      <option value="Eastern Cape">Eastern Cape</option>
+      <option value="Free State">Free State</option>
+      <option value="Limpopo">Limpopo</option>
+      <option value="Mpumalanga">Mpumalanga</option>
+      <option value="North West">North West</option>
+      <option value="Northern Cape">Northern Cape</option>
+    </select>
+
     <button id="payButton">Pay Now</button>
   </div>
 
   <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
   <script>
-    // 🔎 Get values passed from Shopify Buy Button
-    const urlParams = new URLSearchParams(window.location.search);
-    const variantId = urlParams.get("variantId");
-    const quantity = parseInt(urlParams.get("quantity") || "1");
-    const amount = parseFloat(urlParams.get("amount")) || 0; // passed in Rands
+    const params = new URLSearchParams(window.location.search);
+    const productName = params.get("title") || "StoreCollect Product";
+    const usdPrice = parseFloat(params.get("usd")) || 30;
+    const usdShip = parseFloat(params.get("ship")) || 5;
+    const quantity = parseInt(params.get("quantity")) || 1;
 
-    // Show amount in Rands
-    const totalAmount = (amount * quantity).toFixed(2);
-    document.getElementById("amountDisplay").innerText = "Amount to pay: R " + totalAmount;
+    document.getElementById("productName").innerText = productName;
 
-    // Initialize Yoco SDK
-    const yoco = new window.YocoSDK({
-      publicKey: "pk_test_f8ef89c3e4d89f75c7f73dff"
+    let totalZAR = 0;
+    let rate = 18; // fallback rate if API fails
+
+    const shippingUSDByProvince = {
+      "Gauteng": 60,
+      "Western Cape": 60,
+      "KwaZulu-Natal": 40,
+      "Eastern Cape": 60,
+      "Free State": 40,
+      "Limpopo": 50,
+      "Mpumalanga": 70,
+      "North West": 40,
+      "Northern Cape": 60
+    };
+
+    async function fetchRate() {
+      try {
+        const res = await fetch("https://open.er-api.com/v6/latest/USD");
+        const data = await res.json();
+        rate = data.rates["ZAR"];
+      } catch (err) {
+        console.warn("Using fallback rate:", err);
+      }
+      updateTotal();
+    }
+
+    function updateTotal(province = "") {
+      let shipUSD = usdShip;
+      if (province && shippingUSDByProvince[province]) {
+        shipUSD = shippingUSDByProvince[province];
+      }
+
+      const baseUSD = usdPrice * quantity;
+      const totalUSD = baseUSD + shipUSD;
+      totalZAR = totalUSD * rate;
+
+      document.getElementById("priceBase").innerText = `Product: $${baseUSD.toFixed(2)} USD`;
+      document.getElementById("priceShip").innerText = `Shipping: $${shipUSD.toFixed(2)} USD`;
+      document.getElementById("priceTotal").innerText = `Total: R ${totalZAR.toFixed(2)} ZAR`;
+    }
+
+    document.getElementById("province").addEventListener("change", e => {
+      updateTotal(e.target.value);
     });
 
-    // Handle Pay Now click
-    document.getElementById("payButton").addEventListener("click", function () {
+    fetchRate();
+
+    const yoco = new window.YocoSDK({ publicKey: "pk_test_f8ef89c3e4d89f75c7f73dff" });
+
+    document.getElementById("payButton").addEventListener("click", () => {
+      if (!totalZAR) {
+        alert("Price not ready yet.");
+        return;
+      }
       yoco.showPopup({
-        amountInCents: Math.round(amount * 100), // convert rands → cents
+        amountInCents: Math.round(totalZAR * 100),
         currency: "ZAR",
-        name: "StoreCollect Order",
-        description: "Variant ID: " + variantId,
-        callback: function (result) {
+        name: productName,
+        description: `Payment for ${productName}`,
+        callback: function(result) {
           if (result.error) {
             alert("Payment failed: " + result.error.message);
           } else {
-            alert("Payment successful! Reference: " + result.id);
-
-            // ✅ Send payment + order info to webhook (Shopify order creation)
-            fetch("/api/webhook", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                payment_id: result.id,
-                variant_id: variantId,
-                quantity: quantity,
-                amount: totalAmount,
-                currency: "ZAR"
-              })
-            }).then(r => r.json())
-              .then(data => console.log("Webhook response:", data))
-              .catch(err => console.error("Webhook error:", err));
+            alert("✅ Payment successful! Reference: " + result.id);
           }
         }
       });
@@ -104,5 +120,6 @@
   </script>
 </body>
 </html>
+
 
 
