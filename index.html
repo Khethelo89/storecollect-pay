@@ -15,9 +15,12 @@ h1 { margin-bottom: 5px; color: #222; }
 p { margin-top: 0; color: #555; font-size: 18px; }
 </style>
 
-<script type="text/javascript" src="https://cdn.emailjs.com/dist/email.min.js"></script>
-<script type="text/javascript">
-(function(){ emailjs.init('YOUR_EMAILJS_PUBLIC_KEY'); })();
+<script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
+<script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+<script>
+  (function(){
+    emailjs.init('YOUR_EMAILJS_PUBLIC_KEY'); // Replace with your EmailJS public key
+  })();
 </script>
 </head>
 <body>
@@ -32,7 +35,7 @@ p { margin-top: 0; color: #555; font-size: 18px; }
   <input type="tel" id="customerPhone" placeholder="Phone Number" required />
   <input type="text" id="customerAddress" placeholder="Street Address" required />
   <input type="text" id="customerCity" placeholder="City" required />
-  
+
   <select id="customerProvince" required>
     <option value="">Select Province</option>
     <option value="Gauteng">Gauteng</option>
@@ -52,58 +55,73 @@ p { margin-top: 0; color: #555; font-size: 18px; }
   <button id="payBtn" type="button">Pay Now</button>
 </div>
 
-<script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
 <script>
-// Your Yoco public key & webhook
 const yocoPublicKey = 'pk_test_a3abafa43ol0djK02ad4';
 const backendWebhookUrl = 'https://storecollect-pay.vercel.app/api/yoco-webhook';
 
 // Shipping rates
 const shippingRates = {
-  "Gauteng": 50, "Western Cape": 70, "KwaZulu-Natal": 65,
-  "Eastern Cape": 80, "Free State": 60, "Limpopo": 75,
-  "Mpumalanga": 70, "North West": 65, "Northern Cape": 90
+  "Gauteng": 50,
+  "Western Cape": 70,
+  "KwaZulu-Natal": 65,
+  "Eastern Cape": 80,
+  "Free State": 60,
+  "Limpopo": 75,
+  "Mpumalanga": 70,
+  "North West": 65,
+  "Northern Cape": 90
 };
 
-// Format currency
 const formatCurrency = (amount) => amount.toLocaleString("en-ZA", { style: "currency", currency: "ZAR" });
 
-let cartItems = [];
+// Fetch Shopify product data dynamically
+async function fetchShopifyProduct() {
+  const params = new URLSearchParams(window.location.search);
+  const variantId = params.get('variantId');
+  if (!variantId) return { name: 'StoreCollect.net Payment', price: 550, quantity: 1, currency: 'ZAR', shippingCost: 0 };
 
-// Fetch Shopify cart
-fetch('/cart.js')
-  .then(res => res.json())
-  .then(cart => {
-    cartItems = cart.items.map(item => ({
-      name: item.product_title,
-      price: item.price / 100,
-      quantity: item.quantity,
-      variantId: item.variant_id
-    }));
-
-    document.getElementById('productName').textContent = cartItems.map(i => `${i.quantity}× ${i.name}`).join(', ');
-    updateTotal();
-  })
-  .catch(err => {
-    console.error('Error fetching Shopify cart:', err);
-    cartItems = [{ name: 'StoreCollect Product', price: 550, quantity: 1 }];
-    updateTotal();
-  });
-
-const productPriceElem = document.getElementById('productPrice');
-
-function updateTotal() {
-  const province = document.getElementById('customerProvince').value;
-  const shippingCost = shippingRates[province] || 0;
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const total = subtotal + shippingCost;
-  productPriceElem.textContent = `Amount to pay: ${formatCurrency(total)} (Shipping: ${formatCurrency(shippingCost)})`;
-  return { total, shippingCost };
+  try {
+    const res = await fetch(`https://b007a7-f0.myshopify.com/admin/api/2025-07/variants/${variantId}.json`, {
+      headers: {
+        'X-Shopify-Access-Token': 'YOUR_SHOPIFY_TOKEN',
+        'Content-Type': 'application/json'
+      }
+    });
+    const data = await res.json();
+    return {
+      name: data.variant.title || 'StoreCollect Product',
+      price: parseFloat(data.variant.price) || 550,
+      quantity: parseInt(params.get('quantity')) || 1,
+      currency: 'ZAR',
+      variantId: variantId,
+      shippingCost: 0
+    };
+  } catch (err) {
+    console.error('Failed to fetch Shopify variant:', err);
+    return { name: 'StoreCollect.net Payment', price: 550, quantity: 1, currency: 'ZAR', shippingCost: 0 };
+  }
 }
 
-document.getElementById('customerProvince').addEventListener('change', updateTotal);
+let product;
 
-const yoco = new YocoSDK({ publicKey: yocoPublicKey });
+(async () => {
+  product = await fetchShopifyProduct();
+  document.getElementById('productName').textContent = product.name;
+  updateTotal();
+})();
+
+function updateTotal() {
+  document.getElementById('productPrice').textContent =
+    `Amount to pay: ${formatCurrency(product.price * product.quantity + product.shippingCost)} (Shipping: ${formatCurrency(product.shippingCost)})`;
+}
+
+document.getElementById('customerProvince').addEventListener('change', function() {
+  const selectedProvince = this.value;
+  product.shippingCost = shippingRates[selectedProvince] || 0;
+  updateTotal();
+});
+
+const yoco = new window.YocoSDK({ publicKey: yocoPublicKey });
 
 document.getElementById('payBtn').addEventListener('click', () => {
   const firstName = document.getElementById('customerFirstName').value.trim();
@@ -121,13 +139,13 @@ document.getElementById('payBtn').addEventListener('click', () => {
     return;
   }
 
-  const { total, shippingCost } = updateTotal();
+  const totalAmount = (product.price * product.quantity) + product.shippingCost;
 
   yoco.showPopup({
-    amountInCents: Math.round(total * 100),
-    currency: 'ZAR',
-    name: 'StoreCollect.net Payment',
-    description: 'Payment including shipping',
+    amountInCents: Math.round(totalAmount * 100),
+    currency: product.currency,
+    name: product.name,
+    description: `Payment for ${product.name} (Shipping included)`,
     callback: function(result) {
       if (result.error) {
         alert('Payment failed: ' + result.error.message);
@@ -136,13 +154,12 @@ document.getElementById('payBtn').addEventListener('click', () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            line_items: cartItems.map(item => ({
-              product_name: item.name,
-              product_quantity: item.quantity,
-              product_price: item.price.toFixed(2),
-              variantId: item.variantId
-            })),
-            shipping_cost: shippingCost.toFixed(2),
+            product_name: product.name,
+            product_quantity: product.quantity,
+            product_price: product.price.toFixed(2),
+            currency: product.currency,
+            variantId: product.variantId,
+            shipping_cost: product.shippingCost.toFixed(2),
             customer_first_name: firstName,
             customer_last_name: lastName,
             customer_email: email,
@@ -155,18 +172,16 @@ document.getElementById('payBtn').addEventListener('click', () => {
             payment_id: result.id,
             financial_status: 'paid'
           })
-        }).then(res => res.json())
-          .then(data => {
-            console.log('Webhook response:', data);
-            alert('✅ Payment successful! Shopify order created.');
-            window.location.href = 'thank-you.html';
-          }).catch(err => {
-            console.error(err);
-            alert('⚠ Payment succeeded but order creation failed.');
-          });
+        }).then(res => {
+          if (res.ok) alert('✅ Payment successful! Shopify order created.');
+          else res.text().then(err => { console.error(err); alert('⚠ Payment succeeded but order creation failed.'); });
+        });
 
-        // EmailJS
         emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', {
+          product_name: product.name,
+          total_amount: totalAmount.toFixed(2),
+          quantity: product.quantity,
+          shipping_cost: product.shippingCost.toFixed(2),
           customer_name: firstName + ' ' + lastName,
           customer_email: email,
           customer_phone: phone,
@@ -174,10 +189,10 @@ document.getElementById('payBtn').addEventListener('click', () => {
           customer_city: city,
           customer_province: province,
           customer_country: country,
-          customer_zip: zip,
-          line_items: JSON.stringify(cartItems),
-          total_amount: total.toFixed(2)
+          customer_zip: zip
         });
+
+        window.location.href = 'thank-you.html';
       }
     }
   });
@@ -185,3 +200,4 @@ document.getElementById('payBtn').addEventListener('click', () => {
 </script>
 </body>
 </html>
+
