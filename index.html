@@ -1,194 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>StoreCollect Payment</title>
-<style>
-body {
-  font-family: Arial, sans-serif;
-  background: #f3f3f3;
-  padding: 50px;
-  text-align: center;
-}
-.container {
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  max-width: 400px;
-  margin: 0 auto;
-}
-img {
-  width: 180px;
-  margin-bottom: 20px;
-}
-input, select, button {
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  font-size: 16px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  box-sizing: border-box;
-}
-button {
-  background: #0066ff;
-  color: white;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-}
-button:hover {
-  background: #0051cc;
-}
-h1 {
-  margin-bottom: 5px;
-  color: #222;
-}
-p {
-  margin-top: 0;
-  color: #555;
-  font-size: 18px;
-}
-</style>
+  <meta charset="UTF-8">
+  <title>StoreCollect Payment</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f3f3;
+      padding: 50px;
+      text-align: center;
+    }
+    .container {
+      background: white;
+      max-width: 400px;
+      margin: auto;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+    .details {
+      text-align: left;
+      margin-bottom: 20px;
+    }
+    .details div {
+      margin: 6px 0;
+      font-size: 15px;
+    }
+    .btn-pay {
+      background: #2ecc71;
+      color: white;
+      border: none;
+      padding: 15px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+    }
+    .btn-pay:hover {
+      background: #27ae60;
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-  <img src="https://raw.githubusercontent.com/Khethelo89/storecollect-pay/main/Logo.png" alt="StoreCollect Logo" />
-  <h1 id="productName">Loading...</h1>
-  <p id="productPrice"></p>
+  <div class="container">
+    <h1>Checkout</h1>
+    <div class="details">
+      <div id="product-title"></div>
+      <div id="product-qty"></div>
+      <div id="product-price"></div>
+      <div id="product-shipping"></div>
+      <div id="product-total" style="font-weight: bold; margin-top: 10px;"></div>
+    </div>
+    <button class="btn-pay" id="payButton">Pay with Yoco</button>
+  </div>
 
-  <input type="text" id="customerFirstName" placeholder="First Name" required />
-  <input type="text" id="customerLastName" placeholder="Last Name" required />
-  <input type="email" id="customerEmail" placeholder="Email Address" required />
-  <input type="tel" id="customerPhone" placeholder="Phone Number" required />
-  <input type="text" id="customerAddress" placeholder="Street Address" required />
-  <input type="text" id="customerCity" placeholder="City" required />
-  
-  <select id="customerProvince" required>
-    <option value="">Select Province</option>
-    <option value="Gauteng">Gauteng</option>
-    <option value="Western Cape">Western Cape</option>
-    <option value="KwaZulu-Natal">KwaZulu-Natal</option>
-    <option value="Eastern Cape">Eastern Cape</option>
-    <option value="Free State">Free State</option>
-    <option value="Limpopo">Limpopo</option>
-    <option value="Mpumalanga">Mpumalanga</option>
-    <option value="North West">North West</option>
-    <option value="Northern Cape">Northern Cape</option>
-  </select>
+  <script>
+    // Get params from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const price = parseFloat(urlParams.get("price")) || 0;
+    const qty = parseInt(urlParams.get("quantity"), 10) || 1;
+    const title = urlParams.get("title") || "Product";
+    const shipping = parseFloat(urlParams.get("shipping")) || 0;
 
-  <input type="text" id="customerCountry" placeholder="Country" required />
-  <input type="text" id="customerZip" placeholder="ZIP / Postal Code" required />
+    // Calculate totals
+    const subtotal = price * qty;
+    const total = subtotal + shipping;
 
-  <button id="payBtn" type="button">Pay Now</button>
-</div>
+    // Display details
+    document.getElementById("product-title").textContent = title;
+    document.getElementById("product-qty").textContent = "Quantity: " + qty;
+    document.getElementById("product-price").textContent = "Price: R " + price.toFixed(2);
+    document.getElementById("product-shipping").textContent = "Shipping: R " + shipping.toFixed(2);
+    document.getElementById("product-total").textContent = "Total: R " + total.toFixed(2);
 
-<script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
-<script>
-const shippingRates = {
-  "Gauteng": 50,
-  "Western Cape": 70,
-  "KwaZulu-Natal": 65,
-  "Eastern Cape": 80,
-  "Free State": 60,
-  "Limpopo": 75,
-  "Mpumalanga": 70,
-  "North West": 65,
-  "Northern Cape": 90
-};
-
-const formatCurrency = (amount) => amount.toLocaleString("en-ZA", { style: "currency", currency: "ZAR" });
-
-function getProductFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  return {
-    name: params.get('title') || 'StoreCollect Payment',
-    price: parseFloat(params.get('price')) || 550.00,
-    quantity: parseInt(params.get('quantity')) || 1,
-    variantId: params.get('variantId') || null,
-    shippingCost: 0,
-    currency: 'ZAR'
-  };
-}
-
-const product = getProductFromUrl();
-document.getElementById('productName').textContent = product.name;
-
-function updateTotal() {
-  const total = product.price * product.quantity + product.shippingCost;
-  document.getElementById('productPrice').textContent =
-    `Amount to pay: ${formatCurrency(total)} (Shipping: ${formatCurrency(product.shippingCost)})`;
-}
-
-updateTotal();
-
-document.getElementById('customerProvince').addEventListener('change', function() {
-  product.shippingCost = shippingRates[this.value] || 0;
-  updateTotal();
-});
-
-const yoco = new window.YocoSDK({ publicKey: 'pk_test_a3abafa43ol0djK02ad4' });
-
-document.getElementById('payBtn').addEventListener('click', () => {
-  const firstName = document.getElementById('customerFirstName').value.trim();
-  const lastName = document.getElementById('customerLastName').value.trim();
-  const email = document.getElementById('customerEmail').value.trim();
-  const phone = document.getElementById('customerPhone').value.trim();
-  const address1 = document.getElementById('customerAddress').value.trim();
-  const city = document.getElementById('customerCity').value.trim();
-  const province = document.getElementById('customerProvince').value.trim();
-  const country = document.getElementById('customerCountry').value.trim();
-  const zip = document.getElementById('customerZip').value.trim();
-
-  if (!firstName || !lastName || !email || !phone || !address1 || !city || !province || !country || !zip) {
-    alert('Please fill in all the fields.');
-    return;
-  }
-
-  const totalAmount = (product.price * product.quantity) + product.shippingCost;
-
-  yoco.showPopup({
-    amountInCents: Math.round(totalAmount * 100),
-    currency: product.currency,
-    name: product.name,
-    description: `Payment for ${product.name} (Shipping included)`,
-    callback: function(result) {
-      if (result.error) {
-        alert('Payment failed: ' + result.error.message);
-      } else {
-        fetch('https://storecollect-pay.vercel.app/api/yoco-webhook', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            product_name: product.name,
-            product_quantity: product.quantity,
-            product_price: product.price.toFixed(2),
-            variantId: product.variantId,
-            shipping_cost: product.shippingCost.toFixed(2),
-            customer_first_name: firstName,
-            customer_last_name: lastName,
-            customer_email: email,
-            customer_phone: phone,
-            customer_address: address1,
-            customer_city: city,
-            customer_province: province,
-            customer_country: country,
-            customer_zip: zip,
-            payment_id: result.id,
-            financial_status: 'paid'
-          })
-        }).then(res => {
-          if (res.ok) alert('✅ Payment successful! Shopify order created.');
-          else res.text().then(err => { console.error("Webhook error:", err); alert('⚠ Payment succeeded but order creation failed.'); });
-        });
-
-        window.location.href = 'thank-you.html';
-      }
-    }
-  });
-});
-</script>
+    // Pay button (Yoco inline SDK)
+    document.getElementById("payButton").addEventListener("click", () => {
+      alert("🚀 Payment for R " + total.toFixed(2) + " would be processed here with Yoco SDK");
+      // TODO: integrate Yoco inline/SDK payment request
+    });
+  </script>
 </body>
 </html>
