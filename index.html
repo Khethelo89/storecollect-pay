@@ -1,125 +1,148 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>StoreCollect Payment</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f3f3f3; padding: 40px; text-align: center; }
-    .container { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 420px; margin: auto; }
-    h1 { color: #333; font-size: 22px; margin-bottom: 20px; }
-    .price { font-size: 18px; margin: 12px 0; }
-    .total { font-size: 22px; font-weight: bold; color: #27ae60; margin: 20px 0; }
-    select, button { width: 100%; padding: 12px; margin-top: 12px; border-radius: 6px; font-size: 16px; }
-    button { background: #2ecc71; color: white; border: none; cursor: pointer; font-weight: bold; }
-    button:hover { background: #27ae60; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>StoreCollect Payment</title>
+<style>
+body { font-family: Arial, sans-serif; background: #f3f3f3; padding: 50px; text-align: center; }
+.container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto; }
+img { width: 180px; margin-bottom: 20px; }
+input, select, button { width: 100%; padding: 12px; margin: 10px 0; font-size: 16px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
+button { background: #0066ff; color: white; border: none; cursor: pointer; font-weight: bold; }
+button:hover { background: #0051cc; }
+h1 { margin-bottom: 5px; color: #222; }
+p { margin-top: 0; color: #555; font-size: 18px; }
+</style>
+<script type="text/javascript" src="https://cdn.emailjs.com/dist/email.min.js"></script>
+<script type="text/javascript">
+  (function(){
+    emailjs.init('YOUR_EMAILJS_PUBLIC_KEY'); // Replace with your EmailJS public key
+  })();
+</script>
 </head>
 <body>
-  <div class="container">
-    <h1 id="productName">Loading...</h1>
-    <p class="price" id="priceBase"></p>
-    <p class="price" id="priceShip"></p>
-    <p class="total" id="priceTotal">Calculating...</p>
+<div class="container">
+  <img src="https://raw.githubusercontent.com/Khethelo89/storecollect-pay/main/Logo.png" alt="StoreCollect Logo" />
+  <h1 id="productName">Loading...</h1>
+  <p id="productPrice"></p>
 
-    <label for="province">Select Province</label>
-    <select id="province">
-      <option value="">-- Select Province --</option>
-      <option value="Gauteng">Gauteng</option>
-      <option value="Western Cape">Western Cape</option>
-      <option value="KwaZulu-Natal">KwaZulu-Natal</option>
-      <option value="Eastern Cape">Eastern Cape</option>
-      <option value="Free State">Free State</option>
-      <option value="Limpopo">Limpopo</option>
-      <option value="Mpumalanga">Mpumalanga</option>
-      <option value="North West">North West</option>
-      <option value="Northern Cape">Northern Cape</option>
-    </select>
+  <input type="text" id="customerFirstName" placeholder="First Name" required />
+  <input type="text" id="customerLastName" placeholder="Last Name" required />
+  <input type="email" id="customerEmail" placeholder="Email Address" required />
+  <input type="tel" id="customerPhone" placeholder="Phone Number" required />
+  <input type="text" id="customerAddress" placeholder="Street Address" required />
+  <input type="text" id="customerCity" placeholder="City" required />
 
-    <button id="payButton">Pay Now</button>
-  </div>
+  <select id="customerProvince" required>
+    <option value="">Select Province</option>
+    <option value="Gauteng">Gauteng</option>
+    <option value="Western Cape">Western Cape</option>
+    <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+    <option value="Eastern Cape">Eastern Cape</option>
+    <option value="Free State">Free State</option>
+    <option value="Limpopo">Limpopo</option>
+    <option value="Mpumalanga">Mpumalanga</option>
+    <option value="North West">North West</option>
+    <option value="Northern Cape">Northern Cape</option>
+  </select>
 
-  <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const productName = params.get("title") || "StoreCollect Product";
-    const usdPrice = parseFloat(params.get("usd")) || 30;
-    const usdShip = parseFloat(params.get("ship")) || 5;
-    const quantity = parseInt(params.get("quantity")) || 1;
+  <input type="text" id="customerCountry" placeholder="Country" required />
+  <input type="text" id="customerZip" placeholder="ZIP / Postal Code" required />
 
-    document.getElementById("productName").innerText = productName;
+  <button id="payBtn" type="button">Pay Now</button>
+</div>
 
-    let totalZAR = 0;
-    let rate = 18; // fallback rate if API fails
+<script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
+<script>
+const yocoPublicKey = 'pk_test_a3abafa43ol0djK02ad4';
+const backendWebhookUrl = 'https://storecollect-pay.vercel.app/api/yoco-webhook';
 
-    const shippingUSDByProvince = {
-      "Gauteng": 60,
-      "Western Cape": 60,
-      "KwaZulu-Natal": 40,
-      "Eastern Cape": 60,
-      "Free State": 40,
-      "Limpopo": 50,
-      "Mpumalanga": 70,
-      "North West": 40,
-      "Northern Cape": 60
-    };
+// Exchange rate USD → ZAR
+const exchangeRate = 18; // Replace with live rate if needed
 
-    async function fetchRate() {
-      try {
-        const res = await fetch("https://open.er-api.com/v6/latest/USD");
-        const data = await res.json();
-        rate = data.rates["ZAR"];
-      } catch (err) {
-        console.warn("Using fallback rate:", err);
-      }
-      updateTotal();
-    }
+// Shipping rates in USD
+const shippingRatesUSD = {
+  "Gauteng": 3,
+  "Western Cape": 4,
+  "KwaZulu-Natal": 3.5,
+  "Eastern Cape": 5,
+  "Free State": 4,
+  "Limpopo": 5,
+  "Mpumalanga": 4.5,
+  "North West": 4,
+  "Northern Cape": 6
+};
 
-    function updateTotal(province = "") {
-      let shipUSD = usdShip;
-      if (province && shippingUSDByProvince[province]) {
-        shipUSD = shippingUSDByProvince[province];
-      }
+// Format as currency
+const formatZAR = amount => amount.toLocaleString('en-ZA', { style: 'currency', currency: 'ZAR' });
 
-      const baseUSD = usdPrice * quantity;
-      const totalUSD = baseUSD + shipUSD;
-      totalZAR = totalUSD * rate;
+// Get product info from URL
+function getProductFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    name: params.get('title') || params.get('product') || 'StoreCollect Product',
+    priceUSD: parseFloat(params.get('price')) || 30, // default USD
+    quantity: parseInt(params.get('quantity')) || 1,
+    currency: params.get('currency') || 'ZAR',
+    variantId: params.get('variantId') || null,
+    shippingUSD: 0
+  };
+}
 
-      document.getElementById("priceBase").innerText = `Product: $${baseUSD.toFixed(2)} USD`;
-      document.getElementById("priceShip").innerText = `Shipping: $${shipUSD.toFixed(2)} USD`;
-      document.getElementById("priceTotal").innerText = `Total: R ${totalZAR.toFixed(2)} ZAR`;
-    }
+const product = getProductFromUrl();
+document.getElementById('productName').textContent = product.name;
 
-    document.getElementById("province").addEventListener("change", e => {
-      updateTotal(e.target.value);
-    });
+// Update total
+function updateTotal() {
+  const totalZAR = (product.priceUSD + product.shippingUSD) * exchangeRate * product.quantity;
+  document.getElementById('productPrice').textContent = 
+    `Amount to pay: ${formatZAR(totalZAR)} (Shipping: ${formatZAR(product.shippingUSD * exchangeRate)})`;
+}
 
-    fetchRate();
+updateTotal();
 
-    const yoco = new window.YocoSDK({ publicKey: "pk_test_f8ef89c3e4d89f75c7f73dff" });
+// Update shipping when province changes
+document.getElementById('customerProvince').addEventListener('change', function() {
+  product.shippingUSD = shippingRatesUSD[this.value] || 0;
+  updateTotal();
+});
 
-    document.getElementById("payButton").addEventListener("click", () => {
-      if (!totalZAR) {
-        alert("Price not ready yet.");
-        return;
-      }
-      yoco.showPopup({
-        amountInCents: Math.round(totalZAR * 100),
-        currency: "ZAR",
-        name: productName,
-        description: `Payment for ${productName}`,
-        callback: function(result) {
-          if (result.error) {
-            alert("Payment failed: " + result.error.message);
-          } else {
-            alert("✅ Payment successful! Reference: " + result.id);
-          }
-        }
-      });
-    });
-  </script>
-</body>
-</html>
+const yoco = new window.YocoSDK({ publicKey: yocoPublicKey });
+
+document.getElementById('payBtn').addEventListener('click', () => {
+  const firstName = document.getElementById('customerFirstName').value.trim();
+  const lastName = document.getElementById('customerLastName').value.trim();
+  const email = document.getElementById('customerEmail').value.trim();
+  const phone = document.getElementById('customerPhone').value.trim();
+  const address1 = document.getElementById('customerAddress').value.trim();
+  const city = document.getElementById('customerCity').value.trim();
+  const province = document.getElementById('customerProvince').value.trim();
+  const country = document.getElementById('customerCountry').value.trim();
+  const zip = document.getElementById('customerZip').value.trim();
+
+  if (!firstName || !lastName || !email || !phone || !address1 || !city || !province || !country || !zip) {
+    alert('Please fill in all fields.');
+    return;
+  }
+
+  const totalUSD = (product.priceUSD * product.quantity) + product.shippingUSD;
+  const totalZAR = totalUSD * exchangeRate;
+
+  yoco.showPopup({
+    amountInCents: Math.round(totalZAR * 100),
+    currency: 'ZAR',
+    name: product.name,
+    description: `Payment for ${product.name} (Shipping included)`,
+    callback: function(result) {
+      if (result.error) {
+        alert('Payment failed: ' + result.error.message);
+      } else {
+        // Send to webhook
+        fetch(backendWebhookUrl, {
+          method: 'POST',
+          headers: { 'Conten
+
 
 
 
