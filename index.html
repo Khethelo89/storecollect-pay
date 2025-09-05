@@ -14,11 +14,7 @@ button:hover { background: #0051cc; }
 h1 { margin-bottom: 5px; color: #222; }
 p { margin-top: 0; color: #555; font-size: 18px; }
 </style>
-
-<script type="text/javascript" src="https://cdn.emailjs.com/dist/email.min.js"></script>
-<script type="text/javascript">
-  (function(){ emailjs.init('YOUR_EMAILJS_PUBLIC_KEY'); })();
-</script>
+<script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
 </head>
 <body>
 <div class="container">
@@ -52,29 +48,26 @@ p { margin-top: 0; color: #555; font-size: 18px; }
   <button id="payBtn" type="button">Pay Now</button>
 </div>
 
-<script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
 <script>
 const yocoPublicKey = 'pk_test_a3abafa43ol0djK02ad4';
 const backendWebhookUrl = 'https://storecollect-pay.vercel.app/api/yoco-webhook';
 
-// Shipping rates by province
+// Shipping rates
 const shippingRates = {
-  "Gauteng": 50, "Western Cape": 70, "KwaZulu-Natal": 65,
-  "Eastern Cape": 80, "Free State": 60, "Limpopo": 75,
-  "Mpumalanga": 70, "North West": 65, "Northern Cape": 90
+  "Gauteng": 50, "Western Cape": 70, "KwaZulu-Natal": 65, "Eastern Cape": 80,
+  "Free State": 60, "Limpopo": 75, "Mpumalanga": 70, "North West": 65, "Northern Cape": 90
 };
 
-// Format number as currency
-const formatCurrency = (amount) => amount.toLocaleString("en-ZA", { style: "currency", currency: "ZAR" });
+// Format currency
+const formatCurrency = amount => amount.toLocaleString("en-ZA", { style: "currency", currency: "ZAR" });
 
-// Get product from URL params
+// Get product data from URL
 function getProductFromUrl() {
   const params = new URLSearchParams(window.location.search);
   return {
-    name: params.get('title') || 'StoreCollect.net Payment',
-    price: parseFloat(params.get('price')) || 550.00,
+    name: params.get('title') || 'StoreCollect Payment',
+    price: parseFloat(params.get('price')) || 0,
     quantity: parseInt(params.get('quantity')) || 1,
-    currency: params.get('currency') || 'ZAR',
     variantId: params.get('variantId') || null,
     shippingCost: 0
   };
@@ -83,20 +76,21 @@ function getProductFromUrl() {
 const product = getProductFromUrl();
 document.getElementById('productName').textContent = product.name;
 
-// Update total display
 function updateTotal() {
   document.getElementById('productPrice').textContent =
     `Amount to pay: ${formatCurrency(product.price * product.quantity + product.shippingCost)} (Shipping: ${formatCurrency(product.shippingCost)})`;
 }
+
+// Initial total
 updateTotal();
 
-// Update shipping cost when province changes
+// Update shipping
 document.getElementById('customerProvince').addEventListener('change', function() {
   product.shippingCost = shippingRates[this.value] || 0;
   updateTotal();
 });
 
-const yoco = new window.YocoSDK({ publicKey: yocoPublicKey });
+const yoco = new YocoSDK({ publicKey: yocoPublicKey });
 
 document.getElementById('payBtn').addEventListener('click', () => {
   const firstName = document.getElementById('customerFirstName').value.trim();
@@ -118,14 +112,13 @@ document.getElementById('payBtn').addEventListener('click', () => {
 
   yoco.showPopup({
     amountInCents: Math.round(totalAmount * 100),
-    currency: product.currency,
+    currency: 'ZAR',
     name: product.name,
     description: `Payment for ${product.name} (Shipping included)`,
     callback: function(result) {
       if (result.error) {
         alert('Payment failed: ' + result.error.message);
       } else {
-        // Send to backend webhook
         fetch(backendWebhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -133,7 +126,6 @@ document.getElementById('payBtn').addEventListener('click', () => {
             product_name: product.name,
             product_quantity: product.quantity,
             product_price: product.price.toFixed(2),
-            currency: product.currency,
             variantId: product.variantId,
             shipping_cost: product.shippingCost.toFixed(2),
             customer_first_name: firstName,
@@ -150,23 +142,7 @@ document.getElementById('payBtn').addEventListener('click', () => {
           })
         }).then(res => {
           if (res.ok) alert('✅ Payment successful! Shopify order created.');
-          else res.text().then(err => { console.error(err); alert('⚠ Payment succeeded but order creation failed.'); });
-        });
-
-        // Send EmailJS notification
-        emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', {
-          product_name: product.name,
-          total_amount: totalAmount.toFixed(2),
-          quantity: product.quantity,
-          shipping_cost: product.shippingCost.toFixed(2),
-          customer_name: firstName + ' ' + lastName,
-          customer_email: email,
-          customer_phone: phone,
-          customer_address: address1,
-          customer_city: city,
-          customer_province: province,
-          customer_country: country,
-          customer_zip: zip
+          else res.text().then(err => { console.error("Shopify webhook error:", err); alert('⚠ Payment succeeded but order creation failed.'); });
         });
 
         window.location.href = 'thank-you.html';
@@ -177,3 +153,4 @@ document.getElementById('payBtn').addEventListener('click', () => {
 </script>
 </body>
 </html>
+
