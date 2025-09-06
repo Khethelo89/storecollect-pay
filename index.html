@@ -3,14 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>StoreCollect Yoco Test</title>
+<title>Yoco Minimal Test</title>
 <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
 <style>
-body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; }
-.container { max-width:400px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
-button { width:100%; padding:12px; font-size:16px; border:none; border-radius:8px; background:black; color:white; cursor:pointer; }
+body { font-family: Arial; text-align:center; padding:50px; background:#f3f3f3; }
+button { padding:20px; font-size:18px; background:black; color:white; border:none; border-radius:8px; cursor:pointer; }
 button:hover { background:#333; }
-#status { margin-top:20px; padding:12px; border-radius:8px; font-weight:bold; word-break: break-word; }
+#status { margin-top:20px; font-weight:bold; padding:10px; border-radius:8px; }
 .success { background:#d4edda; color:#155724; }
 .error { background:#f8d7da; color:#721c24; }
 .info { background:#fff3cd; color:#856404; }
@@ -18,37 +17,32 @@ button:hover { background:#333; }
 </head>
 <body>
 
-<div class="container">
-<h2>StoreCollect Yoco Test</h2>
-
-<button id="payButton">Pay Now (Test R1)</button>
-
+<h2>Yoco Popup Test</h2>
+<button id="payButton" type="button">Pay Now (R1 Test)</button>
 <div id="status" class="info">Click "Pay Now" to open Yoco popup.</div>
-</div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const statusEl = document.getElementById("status");
   const payButton = document.getElementById("payButton");
 
-  // Initialize Yoco with your test public key
+  // Initialize Yoco
   const yoco = new YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
 
   payButton.addEventListener("click", () => {
-    console.log("Pay Now button clicked!"); // Debug click
-
+    console.log("Pay Now button clicked!"); // Debug: confirm click fires
     statusEl.textContent = "⏳ Opening Yoco popup...";
     statusEl.className = "info";
 
     try {
       yoco.showPopup({
-        amountInCents: 100, // R1 test payment
+        amountInCents: 100, // R1 test
         currency: "ZAR",
         name: "StoreCollect Test",
-        description: "Minimal test",
+        description: "Minimal test payment",
         callbacks: {
           onSuccess: function(result){
-            console.log("Yoco result (should have token):", result);
+            console.log("Yoco result:", result); // MUST see token here
             if(result && result.id){
               statusEl.textContent = "✅ Payment successful! Token: " + result.id;
               statusEl.className="success";
