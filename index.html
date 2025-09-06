@@ -67,13 +67,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const tbody = document.querySelector("#cartTable tbody");
   const payButton = document.getElementById("payButton");
 
-  // Example cart items with variant IDs
+  // Cart items with variant IDs
   const items = [
     {title:"Okay Test Product", price:199, quantity:1, variantId:1234567890},
     {title:"Extra Test Product", price:99, quantity:2, variantId:9876543210}
   ];
 
-  // Render cart table and subtotal
   let subtotal = 0;
   items.forEach(item=>{
     const tr = document.createElement("tr");
@@ -122,10 +121,10 @@ document.addEventListener("DOMContentLoaded", () => {
         description:"Order payment",
         callbacks:{
           onSuccess: async function(result){
-            console.log("Yoco result:", result);
+            console.log("Yoco result:", result); // ALWAYS log token
 
             if(result && result.id){
-              statusEl.textContent = "✅ Payment successful! Processing order...";
+              statusEl.textContent = "✅ Payment successful! Token: " + result.id;
               statusEl.className="success";
 
               // Fire webhook asynchronously
@@ -150,7 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 .then(data => console.log("Webhook response:", data))
                 .catch(err => console.error("Webhook error:", err));
 
-              // Redirect to thank-you page regardless of webhook success
+              // ✅ Redirect to thank-you page regardless of webhook
               setTimeout(() => window.location.href="thank-you.html", 1500);
 
             } else {
@@ -175,4 +174,4 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 
 </body>
-  </html>
+</html>
