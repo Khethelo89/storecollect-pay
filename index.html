@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -58,11 +58,12 @@ button:hover { background:#333; }
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+  // Use your Yoco test key
   const yoco = new YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
 
   // Cart items with variantId
   let items = [
-    {title:"Okay Test Product", price:199, quantity:1, variantId: 1234567890}
+    {title:"Okay Test Product", price:199, quantity:1, variantId: 1234567890} 
   ];
   window.items = items;
 
@@ -91,7 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("grandTotal").textContent = (subtotal + shippingCost).toFixed(2);
   });
 
-  // Handle Pay Now click with popup
+  // Handle Pay Now click with Yoco popup
   document.getElementById("payButton").addEventListener("click", () => {
     const formData = new FormData(document.getElementById("checkoutForm"));
     shippingCost = calculateShipping(formData.get("province"));
@@ -119,7 +120,8 @@ document.addEventListener("DOMContentLoaded", () => {
           };
 
           try {
-            const res = await fetch("/api/yoco-webhook", {
+            // Send to your Vercel webhook
+            const res = await fetch("https://storecollect-pay.vercel.app/api/yoco-webhook", {
               method: "POST",
               headers: {"Content-Type":"application/json"},
               body: JSON.stringify({
@@ -130,6 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 ...customerInfo
               })
             });
+
             const data = await res.json();
             if(data.success){
               alert("✅ Payment & order processed!");
