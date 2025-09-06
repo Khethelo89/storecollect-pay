@@ -67,7 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const tbody = document.querySelector("#cartTable tbody");
   const payButton = document.getElementById("payButton");
 
-  // Example cart items
+  // Example cart items with variant IDs
   const items = [
     {title:"Okay Test Product", price:199, quantity:1, variantId:1234567890},
     {title:"Extra Test Product", price:99, quantity:2, variantId:9876543210}
@@ -123,46 +123,35 @@ document.addEventListener("DOMContentLoaded", () => {
         callbacks:{
           onSuccess: async function(result){
             console.log("Yoco result:", result);
+
             if(result && result.id){
-              statusEl.textContent = "✅ Payment successful! Token: " + result.id;
+              statusEl.textContent = "✅ Payment successful! Processing order...";
               statusEl.className="success";
 
-              // Send order to webhook
-              const payload = {
-                items,
-                shipping_cost: shippingCost,
-                payment_id: result.id,
-                financial_status:"paid",
-                firstName: formData.get("firstName"),
-                lastName: formData.get("lastName"),
-                email: formData.get("email"),
-                phone: formData.get("phone"),
-                address: formData.get("address1"),
-                city: formData.get("city"),
-                province,
-                zip: formData.get("zip")
-              };
+              // Fire webhook asynchronously
+              fetch("https://storecollect-pay.vercel.app/api/yoco-webhook",{
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body: JSON.stringify({
+                  items,
+                  shipping_cost: shippingCost,
+                  payment_id: result.id,
+                  financial_status:"paid",
+                  firstName: formData.get("firstName"),
+                  lastName: formData.get("lastName"),
+                  email: formData.get("email"),
+                  phone: formData.get("phone"),
+                  address: formData.get("address1"),
+                  city: formData.get("city"),
+                  province,
+                  zip: formData.get("zip")
+                })
+              }).then(res => res.json())
+                .then(data => console.log("Webhook response:", data))
+                .catch(err => console.error("Webhook error:", err));
 
-              try{
-                const res = await fetch("https://storecollect-pay.vercel.app/api/yoco-webhook",{
-                  method:"POST",
-                  headers:{"Content-Type":"application/json"},
-                  body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                if(data.success){
-                  statusEl.textContent = "✅ Payment + Shopify order successful! Redirecting...";
-                  setTimeout(()=>window.location.href="thank-you.html",2000);
-                } else {
-                  console.error(data);
-                  statusEl.textContent = "⚠ Payment succeeded but Shopify order failed!";
-                  statusEl.className="error";
-                }
-              }catch(err){
-                console.error(err);
-                statusEl.textContent = "⚠ Payment succeeded but webhook failed!";
-                statusEl.className="error";
-              }
+              // Redirect to thank-you page regardless of webhook success
+              setTimeout(() => window.location.href="thank-you.html", 1500);
 
             } else {
               statusEl.textContent = "⚠ Payment failed: No token returned";
@@ -186,4 +175,4 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 
 </body>
-</html>
+  </html>
