@@ -113,12 +113,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       yoco.showPopup({
-        amountInCents: grandTotal*100,
+        amountInCents: grandTotal * 100,
         currency: "ZAR",
         name: "StoreCollect Payment",
         description: "Order payment",
         callbacks: {
           onSuccess: async function(result) {
+            // Check if Yoco returned an error
+            if (result.error) {
+              console.error("🔥 Yoco returned error in success callback:", result.error);
+              statusEl.textContent = "⚠ Payment failed: " + result.error.message;
+              statusEl.className = "error";
+              return;
+            }
+
             statusEl.textContent = "✅ Payment successful! Sending order to Shopify...";
             statusEl.className = "success";
             console.log("✅ Yoco token:", result);
@@ -137,20 +145,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
             try {
               const res = await fetch("https://storecollect-pay.vercel.app/api/yoco-webhook", {
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   items,
                   shipping_cost: shippingCost,
                   payment_id: result.id,
-                  financial_status:"paid",
+                  financial_status: "paid",
                   ...customerInfo
                 })
               });
               const data = await res.json();
               console.log("Webhook response:", data);
 
-              if(data.success){
+              if (data.success) {
                 statusEl.textContent = "✅ Shopify order created successfully!";
                 statusEl.className = "success";
                 setTimeout(()=>{ window.location.href="thank-you.html"; }, 2000);
@@ -158,14 +166,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 statusEl.textContent = "⚠ Shopify order failed: " + (data.details || "Check console");
                 statusEl.className = "error";
               }
-            } catch(err){
+            } catch (err) {
               console.error("🔥 Webhook error:", err);
               statusEl.textContent = "🔥 Webhook error: " + err.message;
               statusEl.className = "error";
             }
           },
-          onError: function(err){
-            console.error("🔥 Yoco error:", err);
+          onError: function(err) {
+            console.error("🔥 Yoco popup error:", err);
             statusEl.textContent = "⚠ Payment failed: " + (err.message || "Check console");
             statusEl.className = "error";
           }
@@ -180,4 +188,4 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 </body>
-</html>            
+</html>
