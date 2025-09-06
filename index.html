@@ -61,9 +61,10 @@ button:hover { background:#333; }
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+  // Initialize Yoco SDK
   const yoco = new YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
 
-  // Sample cart items (replace with real items from Shopify)
+  // Sample cart items
   let items = [{title:"Okay Test Product", price:199, quantity:1}];
   window.items = items;
 
@@ -78,15 +79,15 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.getElementById("totalAmount").textContent = subtotal.toFixed(2);
 
-  // Shipping
+  // Shipping calculator
   const provinceSelect = document.getElementById("province");
   let shippingCost = 0;
   function calculateShipping(province){
-    const rates={"Gauteng":50,"KwaZulu-Natal":55,"Western Cape":60,"Eastern Cape":65,
-                 "Free State":55,"Mpumalanga":60,"Limpopo":65,"North West":55,"Northern Cape":70};
+    const rates = {"Gauteng":50,"KwaZulu-Natal":55,"Western Cape":60,"Eastern Cape":65,
+                   "Free State":55,"Mpumalanga":60,"Limpopo":65,"North West":55,"Northern Cape":70};
     return rates[province] || 70;
   }
-  provinceSelect.addEventListener("change",()=>{
+  provinceSelect.addEventListener("change", ()=>{
     shippingCost = calculateShipping(provinceSelect.value);
     document.getElementById("shippingAmount").textContent = shippingCost.toFixed(2);
     document.getElementById("grandTotal").textContent = (subtotal + shippingCost).toFixed(2);
@@ -97,11 +98,11 @@ document.addEventListener("DOMContentLoaded", () => {
     container: "#yoco-card",
     callbacks: {
       onReady: () => console.log("Yoco card ready"),
-      onError: (err) => console.error("Yoco card error", err)
+      onError: (err) => console.error("Yoco card error:", err)
     }
   });
 
-  // Pay Now
+  // Handle Pay Now
   document.getElementById("payButton").addEventListener("click", async () => {
     const formData = new FormData(document.getElementById("checkoutForm"));
     shippingCost = calculateShipping(formData.get("province"));
@@ -109,40 +110,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const result = await card.createToken();
-      if(result.error){ alert("Payment failed: "+result.error.message); return; }
-      console.log("✅ Yoco token:", result);
+      if(result.error){ alert("⚠ Payment failed: " + result.error.message); return; }
+      console.log("✅ Yoco token created:", result);
 
-      const payload = {
-        items,
-        customer_first_name: formData.get("firstName"),
-        customer_last_name: formData.get("lastName"),
-        customer_email: formData.get("email"),
-        customer_phone: formData.get("phone"),
-        customer_address: formData.get("address1"),
-        customer_city: formData.get("city"),
-        customer_province: formData.get("province"),
-        customer_country: "South Africa",
-        customer_zip: formData.get("zip"),
-        payment_id: result.id,
-        financial_status: "paid",
-        shipping_cost: shippingCost
+      const customerInfo = {
+        firstName: formData.get("firstName"),
+        lastName: formData.get("lastName"),
+        email: formData.get("email"),
+        phone: formData.get("phone"),
+        address: formData.get("address1"),
+        city: formData.get("city"),
+        province: formData.get("province"),
+        zip: formData.get("zip")
       };
+      console.log("Customer info:", customerInfo);
 
-      const res = await fetch("/api/yoco-webhook", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if(data.success){
-        alert("✅ Payment & Shopify order created!");
-        window.location.href="thank-you.html";
-      } else {
-        console.error(data);
-        alert("⚠ Order failed. Check console.");
-      }
+      alert("✅ Yoco token generated! Check console for token object.");
+
     } catch(err){
-      console.error("Yoco token error:", err);
+      console.error("🔥 Yoco token creation error:", err);
       alert("🔥 Payment error. Check console.");
     }
   });
