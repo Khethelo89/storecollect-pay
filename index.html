@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>StoreCollect Payment</title>
-<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
-<script>
-  emailjs.init('YOUR_USER_ID'); // replace with your EmailJS user ID
-</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StoreCollect Payment</title>
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+  <script>
+    emailjs.init('YOUR_USER_ID'); // replace with your EmailJS user ID
+  </script>
 </head>
 <body>
 
@@ -15,19 +15,17 @@
 
 <script>
   // -------------------------------
-  // 1️⃣ Capture Shopify Pay Now query params
+  // 1️⃣ Capture query params
   // -------------------------------
   const params = new URLSearchParams(window.location.search);
 
   const product = {
-    name: params.get('product'),
-    price: parseFloat(params.get('price')) || 0,
+    variantId: params.get('variantId'), // REQUIRED for Shopify
     quantity: parseInt(params.get('quantity')) || 1,
-    variantId: params.get('variantId'),
     shippingCost: parseFloat(params.get('shipping')) || 0
   };
 
-  // Collect customer info from query params or default
+  // Collect customer info
   const firstName = params.get('firstName') || "John";
   const lastName = params.get('lastName') || "Doe";
   const email = params.get('email') || "customer@example.com";
@@ -39,7 +37,7 @@
   const zip = params.get('zip') || "";
 
   // -------------------------------
-  // 2️⃣ Simple shipping calculation (optional)
+  // 2️⃣ Simple shipping calculation
   // -------------------------------
   function calculateShipping(city = "Other", country = "South Africa") {
     const saRates = {
@@ -50,20 +48,18 @@
       'Other': 70
     };
     if (country.toLowerCase() === 'south africa') return saRates[city] || saRates['Other'];
-    return 150; // international default
+    return 150; // international
   }
   product.shippingCost = calculateShipping(city, country);
 
   // -------------------------------
-  // 3️⃣ Send POST to Yoco webhook
+  // 3️⃣ Send POST to Vercel webhook
   // -------------------------------
   async function sendToWebhook() {
     try {
       const payload = {
-        product_name: product.name,
-        product_price: product.price,
-        product_quantity: product.quantity,
         variantId: product.variantId,
+        product_quantity: product.quantity,
         shipping_cost: product.shippingCost,
         customer_first_name: firstName,
         customer_last_name: lastName,
@@ -74,7 +70,7 @@
         customer_province: province,
         customer_country: country,
         customer_zip: zip,
-        payment_id: "SIMULATED_PAYMENT_ID", // replace with real payment ID from Yoco
+        payment_id: "SIMULATED_PAYMENT_ID", // replace with Yoco real payment ID
         financial_status: "paid"
       };
 
@@ -86,15 +82,14 @@
 
       if (!response.ok) throw new Error(await response.text());
       const result = await response.json();
-      console.log('Webhook processed successfully:', result);
+      console.log('✅ Webhook processed:', result);
 
       // -------------------------------
       // 4️⃣ Send EmailJS notification
       // -------------------------------
       emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', {
-        product_name: product.name,
+        variant_id: product.variantId,
         quantity: product.quantity,
-        price: (product.price * product.quantity).toFixed(2),
         shipping_cost: product.shippingCost.toFixed(2),
         customer_name: firstName + ' ' + lastName,
         customer_email: email,
@@ -105,9 +100,9 @@
         customer_country: country,
         customer_zip: zip
       }).then(response => {
-        console.log('EmailJS sent successfully:', response.status, response.text);
+        console.log('📧 EmailJS sent:', response.status, response.text);
       }, error => {
-        console.error('EmailJS error:', error);
+        console.error('❌ EmailJS error:', error);
       });
 
       // -------------------------------
@@ -121,11 +116,10 @@
     }
   }
 
-  // Run payment process automatically
+  // Auto-run payment process
   sendToWebhook();
 </script>
 
 </body>
 </html>
-
        
