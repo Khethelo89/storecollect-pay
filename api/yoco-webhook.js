@@ -7,29 +7,30 @@ export default async function handler(req, res) {
     const payload = req.body;
     console.log("📦 Yoco webhook received:", payload);
 
-    // 1️⃣ Choose line item type
-    let lineItem;
-    if (payload.variantId) {
-      // Real Shopify product
-      lineItem = {
-        variant_id: Number(payload.variantId),
-        quantity: Number(payload.product_quantity) || 1,
-      };
-    } else {
-      // Fallback: custom product (for testing or manual orders)
-      lineItem = {
-        title: payload.product_name || "Test Product",
-        price: Number(payload.product_price) || 199,
-        quantity: Number(payload.product_quantity) || 1,
-      };
-    }
+    // 1️⃣ Build line_items array
+    const lineItems = (payload.items || []).map(item => {
+      if (item.variantId) {
+        // Shopify product variant
+        return {
+          variant_id: Number(item.variantId),
+          quantity: Number(item.quantity) || 1,
+        };
+      } else {
+        // Fallback: custom product (useful for testing or ad-hoc products)
+        return {
+          title: item.title || "Custom Product",
+          price: Number(item.price) || 0,
+          quantity: Number(item.quantity) || 1,
+        };
+      }
+    });
 
     // 2️⃣ Build Shopify order payload
     const shopifyOrder = {
       order: {
         email: payload.customer_email,
-        financial_status: "paid", // mark as paid immediately
-        line_items: [lineItem],
+        financial_status: "paid",
+        line_items: lineItems,
         shipping_lines: [
           {
             title: "Shipping",
@@ -49,6 +50,8 @@ export default async function handler(req, res) {
       },
     };
 
+    console.log("🛒 Shopify order payload:", JSON.stringify(shopifyOrder, null, 2));
+
     // 3️⃣ Send order to Shopify
     const shopifyResponse = await fetch(
       "https://b007a7-f0.myshopify.com/admin/api/2025-07/orders.json",
@@ -66,7 +69,7 @@ export default async function handler(req, res) {
       const errorText = await shopifyResponse.text();
       console.error("❌ Shopify error:", errorText);
       return res
-        .status(500)
+        .status(shopifyResponse.status)
         .json({ error: "Failed to create Shopify order", details: errorText });
     }
 
@@ -74,8 +77,9 @@ export default async function handler(req, res) {
     console.log("✅ Shopify order created:", shopifyData);
 
     return res.status(200).json({ success: true, order: shopifyData });
+
   } catch (err) {
     console.error("🔥 Error processing webhook:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
-}
+          }
