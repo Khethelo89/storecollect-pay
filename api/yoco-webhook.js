@@ -4,25 +4,25 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Ensure request body is parsed
+    // Ensure body is parsed
     const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
     console.log("📦 Yoco webhook received:", payload);
 
-    // Build Shopify order payload (variantId based)
+    // ✅ Build Shopify order payload
     const shopifyOrder = {
       order: {
         email: payload.customer_email,
         financial_status: "paid",
         line_items: [
           {
-            variant_id: parseInt(payload.variantId, 10),
-            quantity: parseInt(payload.product_quantity, 10) || 1,
+            variant_id: Number(payload.variantId), // must be number
+            quantity: Number(payload.product_quantity) || 1,
           },
         ],
         shipping_lines: [
           {
             title: "Shipping",
-            price: payload.shipping_cost || 0,
+            price: Number(payload.shipping_cost) || 0,
           },
         ],
         shipping_address: {
@@ -67,4 +67,4 @@ export default async function handler(req, res) {
     console.error("🔥 Error processing webhook:", err);
     return res.status(500).json({ error: "Internal Server Error", details: err.message });
   }
-      }
+    }
