@@ -1,21 +1,44 @@
+import fetch from "node-fetch";
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
   try {
-    // Ensure body is parsed
     const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-    console.log("📦 Yoco webhook received:", payload);
+    console.log("📦 Webhook received:", payload);
 
-    // ✅ Build Shopify order payload
+    // -------------------------------
+    // 1️⃣ Verify Yoco payment
+    // -------------------------------
+    const yocoSecretKey = process.env.YOCO_SECRET_KEY; // sk_test_xxx
+    const paymentId = payload.payment_id;
+
+    const yocoResponse = await fetch(`https://online.yoco.com/v1/payments/${paymentId}`, {
+      headers: {
+        Authorization: `Basic ${Buffer.from(yocoSecretKey + ":").toString("base64")}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    const yocoData = await yocoResponse.json();
+    console.log("💳 Yoco payment status:", yocoData);
+
+    if (!yocoResponse.ok || yocoData.status !== "successful") {
+      return res.status(400).json({ error: "Payment not successful", details: yocoData });
+    }
+
+    // -------------------------------
+    // 2️⃣ Build Shopify order payload
+    // -------------------------------
     const shopifyOrder = {
       order: {
         email: payload.customer_email,
         financial_status: "paid",
         line_items: [
           {
-            variant_id: Number(payload.variantId), // must be number
+            variant_id: Number(payload.variantId),
             quantity: Number(payload.product_quantity) || 1,
           },
         ],
@@ -37,7 +60,9 @@ export default async function handler(req, res) {
       },
     };
 
-    // Send order to Shopify
+    // -------------------------------
+    // 3️⃣ Send order to Shopify
+    // -------------------------------
     const shopifyResponse = await fetch(
       "https://b007a7-f0.myshopify.com/admin/api/2025-04/orders.json",
       {
@@ -63,8 +88,9 @@ export default async function handler(req, res) {
     console.log("✅ Shopify order created:", shopifyData);
 
     return res.status(200).json({ success: true, order: shopifyData });
+
   } catch (err) {
-    console.error("🔥 Error processing webhook:", err);
+    console.error("🔥 Webhook error:", err);
     return res.status(500).json({ error: "Internal Server Error", details: err.message });
   }
-    }
+}
