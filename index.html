@@ -13,7 +13,7 @@ th, td { padding:8px; border-bottom:1px solid #ddd; text-align:left; }
 input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:8px; }
 button { background:black; color:white; font-size:16px; cursor:pointer; }
 button:hover { background:#333; }
-#yoco-card { margin: 20px 0; }
+#yoco-card { margin: 20px 0; height:160px; }
 </style>
 </head>
 <body>
@@ -79,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.getElementById("totalAmount").textContent = subtotal.toFixed(2);
 
-  // Shipping calculator
+  // Shipping calculation
   const provinceSelect = document.getElementById("province");
   let shippingCost = 0;
   function calculateShipping(province){
@@ -102,14 +102,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Handle Pay Now
+  // Pay Now
   document.getElementById("payButton").addEventListener("click", async () => {
     const formData = new FormData(document.getElementById("checkoutForm"));
     shippingCost = calculateShipping(formData.get("province"));
     const grandTotal = subtotal + shippingCost;
 
     try {
-      const result = await card.createToken();
+      const result = await card.createToken(); // generate Yoco token
       if(result.error){ alert("⚠ Payment failed: " + result.error.message); return; }
       console.log("✅ Yoco token created:", result);
 
@@ -125,14 +125,14 @@ document.addEventListener("DOMContentLoaded", () => {
       };
       console.log("Customer info:", customerInfo);
 
-      alert("✅ Yoco token generated! Check console for token object.");
+      alert("✅ Token generated! Check console for token details.");
 
     } catch(err){
-      console.error("🔥 Yoco token creation error:", err);
+      console.error("🔥 Yoco token error:", err);
       alert("🔥 Payment error. Check console.");
     }
   });
 });
 </script>
 </body>
-</html>
+    </html>
