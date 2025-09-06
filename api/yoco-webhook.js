@@ -1,47 +1,35 @@
-import fetch from "node-fetch";
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
   try {
-    const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-    console.log("📦 Webhook received:", payload);
+    const payload = req.body;
+    console.log("📦 Yoco webhook received:", payload);
 
-    // -------------------------------
-    // 1️⃣ Verify Yoco payment
-    // -------------------------------
-    const yocoSecretKey = process.env.YOCO_SECRET_KEY; // sk_test_xxx
-    const paymentId = payload.payment_id;
-
-    const yocoResponse = await fetch(`https://online.yoco.com/v1/payments/${paymentId}`, {
-      headers: {
-        Authorization: `Basic ${Buffer.from(yocoSecretKey + ":").toString("base64")}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    const yocoData = await yocoResponse.json();
-    console.log("💳 Yoco payment status:", yocoData);
-
-    if (!yocoResponse.ok || yocoData.status !== "successful") {
-      return res.status(400).json({ error: "Payment not successful", details: yocoData });
+    // 1️⃣ Choose line item type
+    let lineItem;
+    if (payload.variantId) {
+      // Real Shopify product
+      lineItem = {
+        variant_id: Number(payload.variantId),
+        quantity: Number(payload.product_quantity) || 1,
+      };
+    } else {
+      // Fallback: custom product (for testing or manual orders)
+      lineItem = {
+        title: payload.product_name || "Test Product",
+        price: Number(payload.product_price) || 199,
+        quantity: Number(payload.product_quantity) || 1,
+      };
     }
 
-    // -------------------------------
     // 2️⃣ Build Shopify order payload
-    // -------------------------------
     const shopifyOrder = {
       order: {
         email: payload.customer_email,
-        financial_status: "paid",
-        line_items: [
-          {
-            variant_id: Number(payload.variantId),
-            quantity: Number(payload.product_quantity) || 1,
-          },
-        ],
+        financial_status: "paid", // mark as paid immediately
+        line_items: [lineItem],
         shipping_lines: [
           {
             title: "Shipping",
@@ -57,14 +45,13 @@ export default async function handler(req, res) {
           country: payload.customer_country,
           zip: payload.customer_zip,
         },
+        note: `Yoco Payment ID: ${payload.payment_id}`,
       },
     };
 
-    // -------------------------------
     // 3️⃣ Send order to Shopify
-    // -------------------------------
     const shopifyResponse = await fetch(
-      "https://b007a7-f0.myshopify.com/admin/api/2025-04/orders.json",
+      "https://b007a7-f0.myshopify.com/admin/api/2025-07/orders.json",
       {
         method: "POST",
         headers: {
@@ -75,22 +62,20 @@ export default async function handler(req, res) {
       }
     );
 
-    const responseText = await shopifyResponse.text();
-
     if (!shopifyResponse.ok) {
-      console.error("❌ Shopify error:", responseText);
+      const errorText = await shopifyResponse.text();
+      console.error("❌ Shopify error:", errorText);
       return res
-        .status(shopifyResponse.status)
-        .json({ error: "Shopify order failed", details: responseText });
+        .status(500)
+        .json({ error: "Failed to create Shopify order", details: errorText });
     }
 
-    const shopifyData = JSON.parse(responseText);
+    const shopifyData = await shopifyResponse.json();
     console.log("✅ Shopify order created:", shopifyData);
 
     return res.status(200).json({ success: true, order: shopifyData });
-
   } catch (err) {
-    console.error("🔥 Webhook error:", err);
-    return res.status(500).json({ error: "Internal Server Error", details: err.message });
+    console.error("🔥 Error processing webhook:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 }
