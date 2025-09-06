@@ -55,98 +55,108 @@ button:hover { background:#333; }
 </div>
 
 <script>
-const yoco = new window.YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
+document.addEventListener("DOMContentLoaded", () => {
+  const yoco = new window.YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
 
-// Get cart items from URL parameter ?items=[JSON]
-const urlParams = new URLSearchParams(window.location.search);
-let items = [];
-try { items = JSON.parse(urlParams.get("items") || "[]"); }
-catch(e){ console.error("Invalid items JSON", e); }
+  // Get cart items from URL ?items=[JSON]
+  const urlParams = new URLSearchParams(window.location.search);
+  let items = [];
+  try { items = JSON.parse(urlParams.get("items") || "[]"); } 
+  catch(e){ console.error("Invalid items JSON", e); }
+  if(items.length===0){ items=[{title:"Okay Test Product", price:199, quantity:1}]; }
 
-// Fallback: hardcoded test product
-if(items.length===0){ items=[{title:"Okay Test Product", price:199, quantity:1}]; }
+  // Display cart
+  const tbody=document.querySelector("#cartTable tbody");
+  let subtotal=0;
+  items.forEach(item=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${item.title}</td><td>${item.quantity}</td><td>R${(item.price*item.quantity).toFixed(2)}</td>`;
+    tbody.appendChild(tr);
+    subtotal+=item.price*item.quantity;
+  });
+  document.getElementById("totalAmount").textContent=subtotal.toFixed(2);
 
-// Display cart
-const tbody = document.querySelector("#cartTable tbody");
-let subtotal = 0;
-items.forEach(item=>{
-  const tr = document.createElement("tr");
-  tr.innerHTML=`<td>${item.title}</td><td>${item.quantity}</td><td>R${(item.price*item.quantity).toFixed(2)}</td>`;
-  tbody.appendChild(tr);
-  subtotal += item.price * item.quantity;
-});
-document.getElementById("totalAmount").textContent=subtotal.toFixed(2);
+  // Shipping calculator
+  function calculateShipping(province){
+    const rates={"Gauteng":50,"KwaZulu-Natal":55,"Western Cape":60,"Eastern Cape":65,
+                 "Free State":55,"Mpumalanga":60,"Limpopo":65,"North West":55,"Northern Cape":70};
+    return rates[province]||70;
+  }
 
-// Shipping calculator
-function calculateShipping(province){
-  const rates={
-    "Gauteng":50,"KwaZulu-Natal":55,"Western Cape":60,"Eastern Cape":65,
-    "Free State":55,"Mpumalanga":60,"Limpopo":65,"North West":55,"Northern Cape":70
-  };
-  return rates[province]||70;
-}
-
-// Update totals when province changes
-const provinceSelect=document.getElementById("province");
-let shippingCost=0;
-provinceSelect.addEventListener("change",()=>{
-  shippingCost=calculateShipping(provinceSelect.value);
-  document.getElementById("shippingAmount").textContent=shippingCost.toFixed(2);
-  document.getElementById("grandTotal").textContent=(subtotal+shippingCost).toFixed(2);
-});
-
-// Handle checkout
-const form=document.getElementById("checkoutForm");
-form.addEventListener("submit", async e=>{
-  e.preventDefault();
-  const formData=new FormData(form);
-  const province=formData.get("province");
-  shippingCost=calculateShipping(province);
-  const grandTotal=subtotal+shippingCost;
-
-  // Simulate payment token
-  const result=await yoco.createToken({
-    amountInCents:grandTotal*100,
-    currency:"ZAR",
-    cardDetails:{
-      name: formData.get("firstName")+" "+formData.get("lastName"),
-      number:"4242424242424242",
-      expiryMonth:"12",
-      expiryYear:"2026",
-      cvv:"123"
-    }
+  const provinceSelect=document.getElementById("province");
+  let shippingCost=0;
+  provinceSelect.addEventListener("change",()=>{
+    shippingCost=calculateShipping(provinceSelect.value);
+    document.getElementById("shippingAmount").textContent=shippingCost.toFixed(2);
+    document.getElementById("grandTotal").textContent=(subtotal+shippingCost).toFixed(2);
   });
 
-  if(result.error){ alert("⚠ Payment failed: "+result.error.message); return; }
+  // Handle checkout
+  const form=document.getElementById("checkoutForm");
+  form.addEventListener("submit", async e=>{
+    e.preventDefault();
+    const formData=new FormData(form);
+    const province=formData.get("province");
+    shippingCost=calculateShipping(province);
+    const grandTotal=subtotal+shippingCost;
 
-  const payload={
-    items,
-    customer_first_name:formData.get("firstName"),
-    customer_last_name:formData.get("lastName"),
-    customer_email:formData.get("email"),
-    customer_phone:formData.get("phone"),
-    customer_address:formData.get("address1"),
-    customer_city:formData.get("city"),
-    customer_province:province,
-    customer_country:"South Africa",
-    customer_zip:formData.get("zip"),
-    payment_id:result.id,
-    financial_status:"paid",
-    shipping_cost:shippingCost
-  };
+    console.log("✅ Form submitted", Object.fromEntries(formData));
+    console.log("Grand Total: R"+grandTotal);
 
-  try{
-    const response=await fetch("https://your-vercel-app.vercel.app/api/yoco-webhook",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify(payload)
-    });
-    const data=await response.json();
-    if(data.success){ alert("✅ Payment and Shopify order created!"); window.location.href="thank-you.html"; }
-    else{ alert("⚠ Order failed: "+(data.details||"Unknown error")); console.error(data); }
-  }catch(err){ console.error(err); alert("🔥 Webhook error, check Vercel logs."); }
+    try {
+      const result = await yoco.createToken({
+        amountInCents: grandTotal*100,
+        currency:"ZAR",
+        cardDetails:{
+          name: formData.get("firstName")+" "+formData.get("lastName"),
+          number:"4242424242424242",
+          expiryMonth:"12",
+          expiryYear:"2026",
+          cvv:"123"
+        }
+      });
+
+      console.log("Yoco result:", result);
+      if(result.error){ alert("⚠ Payment failed: "+result.error.message); return; }
+
+      // Build payload
+      const payload={
+        items,
+        customer_first_name: formData.get("firstName"),
+        customer_last_name: formData.get("lastName"),
+        customer_email: formData.get("email"),
+        customer_phone: formData.get("phone"),
+        customer_address: formData.get("address1"),
+        customer_city: formData.get("city"),
+        customer_province: province,
+        customer_country:"South Africa",
+        customer_zip: formData.get("zip"),
+        payment_id: result.id,
+        financial_status:"paid",
+        shipping_cost: shippingCost
+      };
+
+      const response=await fetch("https://your-vercel-app.vercel.app/api/yoco-webhook",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(payload)
+      });
+
+      const data=await response.json();
+      if(data.success){ 
+        alert("✅ Payment and Shopify order created!"); 
+        window.location.href="thank-you.html"; 
+      } else { 
+        alert("⚠ Order failed: "+(data.details||"Unknown error")); 
+        console.error(data); 
+      }
+    } catch(err){
+      console.error("🔥 Yoco/Webhook error:",err);
+      alert("🔥 Payment error, check console.");
+    }
+  });
 });
 </script>
 </body>
-</html>
+  </html>
 
