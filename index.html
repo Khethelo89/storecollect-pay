@@ -54,7 +54,6 @@ button:hover { background:#333; }
 <input type="text" name="zip" placeholder="Postal Code" required>
 </form>
 
-<!-- Yoco Inline Card -->
 <div id="yoco-card"></div>
 <button id="payButton">Pay Now</button>
 </div>
@@ -92,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("grandTotal").textContent = (subtotal + shippingCost).toFixed(2);
   });
 
-  // Mount Yoco Inline Card
+  // Mount Yoco inline card
   const card = yoco.inlineCard({
     container: "#yoco-card",
     callbacks: {
@@ -101,14 +100,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Handle Pay Now
+  // Handle Pay Now click
   document.getElementById("payButton").addEventListener("click", async () => {
     const formData = new FormData(document.getElementById("checkoutForm"));
     shippingCost = calculateShipping(formData.get("province"));
     const grandTotal = subtotal + shippingCost;
 
     try {
-      const result = await card.createToken(); // generate Yoco token
+      const result = await card.createToken();
       if(result.error){ alert("⚠ Payment failed: " + result.error.message); return; }
       console.log("✅ Yoco token created:", result);
 
@@ -123,7 +122,6 @@ document.addEventListener("DOMContentLoaded", () => {
         zip: formData.get("zip"),
         tokenId: result.id
       };
-
       console.log("Customer info:", customerInfo);
 
       // Send to Vercel webhook
