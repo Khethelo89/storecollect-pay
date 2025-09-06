@@ -61,7 +61,6 @@ button:hover { background:#333; }
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  // Initialize Yoco SDK
   const yoco = new YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
 
   // Sample cart items
@@ -102,7 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Pay Now
+  // Handle Pay Now
   document.getElementById("payButton").addEventListener("click", async () => {
     const formData = new FormData(document.getElementById("checkoutForm"));
     shippingCost = calculateShipping(formData.get("province"));
@@ -121,18 +120,40 @@ document.addEventListener("DOMContentLoaded", () => {
         address: formData.get("address1"),
         city: formData.get("city"),
         province: formData.get("province"),
-        zip: formData.get("zip")
+        zip: formData.get("zip"),
+        tokenId: result.id
       };
+
       console.log("Customer info:", customerInfo);
 
-      alert("✅ Token generated! Check console for token details.");
+      // Send to Vercel webhook
+      const res = await fetch("/api/yoco-webhook", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+          items,
+          shipping_cost: shippingCost,
+          payment_id: result.id,
+          financial_status: "paid",
+          ...customerInfo
+        })
+      });
+
+      const data = await res.json();
+      if(data.success){
+        alert("✅ Payment & webhook processed!");
+        window.location.href="thank-you.html";
+      } else {
+        console.error(data);
+        alert("⚠ Order failed. Check console.");
+      }
 
     } catch(err){
-      console.error("🔥 Yoco token error:", err);
+      console.error("🔥 Error:", err);
       alert("🔥 Payment error. Check console.");
     }
   });
 });
 </script>
 </body>
-    </html>
+</html>
