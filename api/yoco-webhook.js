@@ -1,5 +1,5 @@
- export default async function handler(req, res) {
-  // Allow CORS for testing
+export default async function handler(req, res) {
+  // Enable CORS for browser requests
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -29,7 +29,7 @@
       }
     });
 
-    // Build Shopify order payload
+    // Shopify order payload
     const shopifyOrder = {
       order: {
         email: payload.customer_email,
@@ -89,4 +89,4 @@
     console.error("🔥 Webhook error:", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
-          }
+}
