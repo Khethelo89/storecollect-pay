@@ -19,8 +19,8 @@ export default async function handler(req, res) {
           variant_id: item.variantId
         })),
         shipping_lines: [{ title: "Shipping", price: shipping_cost || 0 }],
-        shipping_address: { first_name: firstName, last_name: lastName, address1: address,
-                            city, province, country: "South Africa", zip },
+        shipping_address: { first_name:firstName, last_name:lastName, address1:address,
+                            city, province, country:"South Africa", zip },
         tags: `YocoPayment:${payment_id}`
       }
     };
@@ -38,20 +38,3 @@ export default async function handler(req, res) {
         body: JSON.stringify(shopifyOrder)
       }
     );
-
-    if(!shopifyResponse.ok){
-      const errorText = await shopifyResponse.text();
-      console.error('❌ Shopify error:', errorText);
-      return res.status(500).json({ error: 'Failed to create Shopify order', details: errorText });
-    }
-
-    const shopifyData = await shopifyResponse.json();
-    console.log('✅ Shopify order created:', shopifyData);
-
-    res.status(200).json({ success: true, order: shopifyData });
-
-  } catch(err){
-    console.error('🔥 Webhook processing error:', err);
-    res.status(500).json({ error: 'Internal Server Error', details: err.message });
-  }
-}
