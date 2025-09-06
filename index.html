@@ -1,4 +1,4 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -58,12 +58,12 @@ button:hover { background:#333; }
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  // Use your Yoco test key
+  // ✅ Yoco test key
   const yoco = new YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
 
   // Cart items with variantId
   let items = [
-    {title:"Okay Test Product", price:199, quantity:1, variantId: 1234567890} 
+    {title:"Okay Test Product", price:199, quantity:1, variantId: 1234567890}
   ];
   window.items = items;
 
@@ -92,12 +92,13 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("grandTotal").textContent = (subtotal + shippingCost).toFixed(2);
   });
 
-  // Handle Pay Now click with Yoco popup
+  // Pay Now button
   document.getElementById("payButton").addEventListener("click", () => {
     const formData = new FormData(document.getElementById("checkoutForm"));
     shippingCost = calculateShipping(formData.get("province"));
     const grandTotal = subtotal + shippingCost;
 
+    // ✅ Show Yoco popup
     yoco.showPopup({
       amountInCents: grandTotal*100,
       currency: "ZAR",
@@ -105,6 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
       description: "Order payment",
       callbacks: {
         onSuccess: async function(result) {
+          alert("✅ Yoco payment successful! Token: " + result.id);
           console.log("✅ Yoco token:", result);
 
           const customerInfo = {
@@ -120,35 +122,36 @@ document.addEventListener("DOMContentLoaded", () => {
           };
 
           try {
-            // Send to your Vercel webhook
+            // ✅ Send to webhook
             const res = await fetch("https://storecollect-pay.vercel.app/api/yoco-webhook", {
-              method: "POST",
-              headers: {"Content-Type":"application/json"},
+              method:"POST",
+              headers:{"Content-Type":"application/json"},
               body: JSON.stringify({
                 items,
                 shipping_cost: shippingCost,
                 payment_id: result.id,
-                financial_status: "paid",
+                financial_status:"paid",
                 ...customerInfo
               })
             });
 
             const data = await res.json();
+            console.log("Webhook response:", data);
+
             if(data.success){
-              alert("✅ Payment & order processed!");
+              alert("✅ Payment & Shopify order processed!");
               window.location.href="thank-you.html";
             } else {
-              console.error(data);
-              alert("⚠ Order failed. Check console.");
+              alert("⚠ Order creation failed. Check console for details.");
             }
           } catch(err){
-            console.error(err);
-            alert("🔥 Error sending order to webhook.");
+            console.error("🔥 Webhook error:", err);
+            alert("🔥 Error sending order to webhook. Check console.");
           }
         },
         onError: function(err){
           console.error("🔥 Yoco error:", err);
-          alert("⚠ Payment failed.");
+          alert("⚠ Payment failed. Check console.");
         }
       }
     });
