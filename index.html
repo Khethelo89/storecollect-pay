@@ -15,6 +15,8 @@ button:hover { background:#333; }
 .success { background: #d4edda; color: #155724; }
 .error { background: #f8d7da; color: #721c24; }
 .info { background: #fff3cd; color: #856404; }
+table { width:100%; border-collapse: collapse; margin-bottom:20px; }
+th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
 </style>
 </head>
 <body>
@@ -46,6 +48,14 @@ button:hover { background:#333; }
 <input type="text" name="zip" placeholder="Postal Code" required>
 </form>
 
+<h3>Cart:</h3>
+<table id="cartTable">
+  <thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead>
+  <tbody></tbody>
+</table>
+
+<h3>Total: R<span id="grandTotal">0</span></h3>
+
 <button id="payButton">Pay Now</button>
 
 <div id="status" class="info">Fill the form and click "Pay Now" to proceed.</div>
@@ -54,10 +64,23 @@ button:hover { background:#333; }
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const statusEl = document.getElementById("status");
+  const tbody = document.querySelector("#cartTable tbody");
+  const payButton = document.getElementById("payButton");
 
-  // Test product with variant
-  const items = [{title:"Okay Test Product", price:199, quantity:1, variantId:1234567890}];
-  let subtotal = items.reduce((sum,item)=>sum+item.price*item.quantity,0);
+  // Products with variant IDs
+  const items = [
+    {title:"Okay Test Product", price:199, quantity:1, variantId:1234567890},
+    {title:"Extra Test Product", price:99, quantity:2, variantId:9876543210}
+  ];
+
+  // Render cart table
+  let subtotal = 0;
+  items.forEach(item=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${item.title}</td><td>${item.quantity}</td><td>R${(item.price*item.quantity).toFixed(2)}</td>`;
+    tbody.appendChild(tr);
+    subtotal += item.price * item.quantity;
+  });
 
   // Shipping calculation
   const provinceSelect = document.getElementById("province");
@@ -70,13 +93,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   provinceSelect.addEventListener("change", ()=>{
     shippingCost = calculateShipping(provinceSelect.value);
+    document.getElementById("grandTotal").textContent = (subtotal + shippingCost).toFixed(2);
   });
+
+  document.getElementById("grandTotal").textContent = subtotal.toFixed(2);
 
   // Initialize Yoco
   const yoco = new YocoSDK({ publicKey:"pk_test_a3abafa43ol0djK02ad4" });
 
-  document.getElementById("payButton").addEventListener("click", async () => {
+  payButton.addEventListener("click", async () => {
     const formData = new FormData(document.getElementById("checkoutForm"));
+
     if(!formData.get("province")){
       statusEl.textContent = "⚠ Please select a province!";
       statusEl.className="error";
@@ -85,13 +112,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     shippingCost = calculateShipping(formData.get("province"));
     const grandTotal = subtotal + shippingCost;
+    statusEl.textContent = "⏳ Opening payment popup...";
+    statusEl.className = "info";
 
-    setTimeout(()=>{
-      statusEl.textContent = "⏳ Opening payment popup...";
-      statusEl.className="info";
-    }, 50);
-
-    try{
+    try {
       yoco.showPopup({
         amountInCents: Math.round(grandTotal*100),
         currency:"ZAR",
@@ -106,11 +130,10 @@ document.addEventListener("DOMContentLoaded", () => {
               return;
             }
 
-            console.log("✅ Token:", result);
+            console.log("✅ Yoco token:", result);
             statusEl.textContent = "✅ Payment successful! Sending order...";
             statusEl.className="success";
 
-            // Prepare payload for webhook
             const payload = {
               items: items.map(i=>({title:i.title, price:i.price, quantity:i.quantity, variantId:i.variantId})),
               shipping_cost: shippingCost,
@@ -126,35 +149,41 @@ document.addEventListener("DOMContentLoaded", () => {
               zip: formData.get("zip")
             };
 
-            try{
+            try {
               const res = await fetch("https://storecollect-pay.vercel.app/api/yoco-webhook", {
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
+                method: "POST",
+                headers: {"Content-Type":"application/json"},
                 body: JSON.stringify(payload)
               });
+
               const data = await res.json();
               if(data.success){
                 console.log("✅ Shopify order created:", data.order);
-                statusEl.textContent = "✅ Payment and Shopify order successful!";
+                statusEl.textContent = "✅ Payment and Shopify order successful! Redirecting...";
+                statusEl.className="success";
+
+                setTimeout(()=>{ window.location.href="thank-you.html"; }, 2000);
+
               } else {
                 console.error("❌ Shopify error:", data);
                 statusEl.textContent = "⚠ Payment succeeded but Shopify order failed!";
                 statusEl.className="error";
               }
-            }catch(err){
+
+            } catch(err){
               console.error("🔥 Webhook call failed:", err);
               statusEl.textContent = "⚠ Payment succeeded but order webhook failed!";
               statusEl.className="error";
             }
-
           },
-          onError:function(err){
+          onError: function(err){
             console.error("🔥 Yoco popup error:", err);
             statusEl.textContent = "⚠ Payment failed: " + (err.message || "Check console");
             statusEl.className="error";
           }
         }
       });
+
     } catch(err){
       console.error("🔥 Popup exception:", err);
       statusEl.textContent = "⚠ Popup failed: " + err.message;
