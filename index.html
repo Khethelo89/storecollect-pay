@@ -25,6 +25,8 @@
 
     const product = {
       variantId: params.get("variantId"),
+      name: params.get("product") || "Test Product",
+      price: parseFloat(params.get("price")) || 199, // fallback test price
       quantity: parseInt(params.get("quantity")) || 1,
       shippingCost: parseFloat(params.get("shipping")) || 0,
     };
@@ -51,8 +53,7 @@
     // 3️⃣ Open payment popup
     // -------------------------------
     async function processPayment() {
-      const unitPrice = 199; // example product price in ZAR
-      const totalAmount = product.quantity * unitPrice + product.shippingCost;
+      const totalAmount = product.quantity * product.price + product.shippingCost;
       const amountInCents = totalAmount * 100;
 
       console.log("💳 Charging R" + totalAmount, "(", amountInCents, "cents )");
@@ -61,7 +62,7 @@
         amountInCents,
         currency: "ZAR",
         name: "StoreCollect",
-        description: "Order Payment",
+        description: product.name,
         callback: async (result) => {
           if (result.error) {
             console.error("❌ Yoco error:", result.error.message);
@@ -76,6 +77,8 @@
           // -------------------------------
           const payload = {
             variantId: product.variantId,
+            product_name: product.name,
+            product_price: product.price,
             product_quantity: product.quantity,
             shipping_cost: product.shippingCost,
             customer_first_name: firstName,
@@ -111,7 +114,8 @@
 
             // Optional: EmailJS notification
             emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
-              variant_id: product.variantId,
+              product_name: product.name,
+              product_price: product.price.toFixed(2),
               quantity: product.quantity,
               shipping_cost: product.shippingCost.toFixed(2),
               customer_name: firstName + " " + lastName,
