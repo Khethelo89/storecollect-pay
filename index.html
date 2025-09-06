@@ -6,25 +6,19 @@
 <title>StoreCollect Checkout</title>
 <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
 <style>
-body { font-family: Arial; background:#f3f3f3; padding:20px; text-align:center; }
+body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; }
 .container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
-table { width:100%; margin-bottom:20px; border-collapse: collapse; }
-th, td { padding:8px; border-bottom:1px solid #ddd; text-align:left; }
 input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:8px; }
 button { background:black; color:white; font-size:16px; cursor:pointer; }
 button:hover { background:#333; }
-#status { margin-top:20px; padding:10px; border-radius:8px; font-weight:bold; word-break: break-word; }
-.success { background: #d4edda; color: #155724; }
-.error { background: #f8d7da; color: #721c24; }
-.info { background: #fff3cd; color: #856404; }
 </style>
 </head>
 <body>
 
 <div class="container">
-<h2>StoreCollect Checkout</h2>
+<h2>StoreCollect Checkout (Console Debug)</h2>
 
-<table id="cartTable">
+<table id="cartTable" style="width:100%; margin-bottom:20px;">
   <thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead>
   <tbody></tbody>
 </table>
@@ -58,22 +52,12 @@ button:hover { background:#333; }
 </form>
 
 <button id="payButton">Pay Now</button>
-
-<div id="status" class="info">Fill the form and click "Pay Now" to proceed.</div>
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const statusEl = document.getElementById("status");
-
-  // ✅ Yoco test key
-  const yoco = new YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
-
-  // Cart items
-  let items = [{title:"Okay Test Product", price:199, quantity:1, variantId: 1234567890}];
+  const items = [{title:"Okay Test Product", price:199, quantity:1, variantId:1234567890}];
   let subtotal = 0;
-
-  // Display cart
   const tbody = document.querySelector("#cartTable tbody");
   items.forEach(item => {
     const tr = document.createElement("tr");
@@ -83,7 +67,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.getElementById("totalAmount").textContent = subtotal.toFixed(2);
 
-  // Shipping
   const provinceSelect = document.getElementById("province");
   let shippingCost = 0;
   function calculateShipping(province){
@@ -97,94 +80,45 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("grandTotal").textContent = (subtotal + shippingCost).toFixed(2);
   });
 
-  // Pay Now
+  // Initialize Yoco
+  const yoco = new YocoSDK({ publicKey:"pk_test_a3abafa43ol0djK02ad4" });
+
   document.getElementById("payButton").addEventListener("click", () => {
     const formData = new FormData(document.getElementById("checkoutForm"));
-    if(!formData.get("province")) {
-      statusEl.textContent = "⚠ Please select a province!";
-      statusEl.className="error";
+    if(!formData.get("province")){
+      console.error("⚠ Please select a province!");
       return;
     }
     shippingCost = calculateShipping(formData.get("province"));
     const grandTotal = subtotal + shippingCost;
 
-    statusEl.textContent = "Opening payment popup...";
-    statusEl.className = "info";
+    console.log("⏳ Opening Yoco popup... Amount:", grandTotal);
 
-    try {
+    try{
       yoco.showPopup({
         amountInCents: Math.round(grandTotal*100),
-        currency: "ZAR",
-        name: "StoreCollect Payment",
-        description: "Order payment",
-        callbacks: {
-          onSuccess: async function(result) {
+        currency:"ZAR",
+        name:"StoreCollect Payment",
+        description:"Order payment",
+        callbacks:{
+          onSuccess:function(result){
             if(result.error){
-              console.error("🔥 Yoco returned error in success callback:", result.error);
-              statusEl.textContent = "⚠ Payment failed: " + result.error.message;
-              statusEl.className="error";
+              console.error("🔥 Yoco returned error:", result.error);
               return;
             }
-
-            statusEl.textContent = "✅ Payment successful! Sending order to Shopify...";
-            statusEl.className = "success";
-            console.log("✅ Yoco token:", result);
-
-            const customerInfo = {
-              firstName: formData.get("firstName"),
-              lastName: formData.get("lastName"),
-              email: formData.get("email"),
-              phone: formData.get("phone"),
-              address: formData.get("address1"),
-              city: formData.get("city"),
-              province: formData.get("province"),
-              zip: formData.get("zip"),
-              tokenId: result.id
-            };
-
-            try {
-              const res = await fetch("https://storecollect-pay.vercel.app/api/yoco-webhook", {
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body: JSON.stringify({
-                  items,
-                  shipping_cost: shippingCost,
-                  payment_id: result.id,
-                  financial_status:"paid",
-                  ...customerInfo
-                })
-              });
-              const data = await res.json();
-              console.log("Webhook response:", data);
-
-              if(data.success){
-                statusEl.textContent = "✅ Shopify order created successfully!";
-                statusEl.className = "success";
-                setTimeout(()=>{ window.location.href="thank-you.html"; }, 2000);
-              } else {
-                statusEl.textContent = "⚠ Shopify order failed: " + (data.details || "Check console");
-                statusEl.className = "error";
-              }
-            } catch(err){
-              console.error("🔥 Webhook error:", err);
-              statusEl.textContent = "🔥 Webhook error: " + err.message;
-              statusEl.className = "error";
-            }
+            console.log("✅ Token generated successfully!");
+            console.log("Yoco token object:", result);
           },
-          onError: function(err){
+          onError:function(err){
             console.error("🔥 Yoco popup error:", err);
-            statusEl.textContent = "⚠ Payment failed: " + (err.message || "Check console");
-            statusEl.className="error";
           }
         }
       });
     } catch(err){
-      console.error("🔥 Yoco popup error:", err);
-      statusEl.textContent = "⚠ Popup failed: " + err.message;
-      statusEl.className="error";
+      console.error("🔥 Popup exception:", err);
     }
   });
 });
 </script>
 </body>
-  </html>
+</html>
