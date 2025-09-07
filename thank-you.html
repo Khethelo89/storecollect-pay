@@ -3,372 +3,59 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>StoreCollect Checkout</title>
-<script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
+<title>Thank You - StoreCollect</title>
 <style>
-body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; }
+body { font-family: Arial, sans-serif; text-align:center; padding:20px; background:#f3f3f3; }
 .container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
-input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:8px; }
-button { background:black; color:white; font-size:16px; cursor:pointer; }
-button:disabled { background:#999; cursor:not-allowed; }
-button:hover:not(:disabled) { background:#333; }
-#status { margin-top:20px; padding:12px; border-radius:8px; font-weight:bold; word-break: break-word; }
-.success { background: #d4edda; color: #155724; }
-.error { background: #f8d7da; color: #721c24; }
-.info { background: #fff3cd; color: #856404; }
+h1 { color: #28a745; }
 table { width:100%; border-collapse: collapse; margin-bottom:20px; }
 th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
 tfoot td { font-weight:bold; }
 </style>
 </head>
 <body>
-
 <div class="container">
-<h2>StoreCollect Checkout</h2>
+  <h1>Thank You for Your Order!</h1>
+  <p>Your payment was successful. Here is your order summary:</p>
 
-<form id="checkoutForm">
-<input type="text" name="firstName" placeholder="First Name" required>
-<input type="text" name="lastName" placeholder="Last Name" required>
-<input type="email" name="email" placeholder="Email" required>
-<input type="text" name="phone" placeholder="Phone">
-<input type="text" name="address1" placeholder="Address" required>
-<input type="text" name="city" placeholder="City" required>
+  <table id="orderTable">
+    <thead>
+      <tr><th>Product</th><th>Qty</th><th>Price</th></tr>
+    </thead>
+    <tbody></tbody>
+    <tfoot>
+      <tr><td colspan="2">Shipping</td><td id="shippingCost">R0.00</td></tr>
+      <tr><td colspan="2">Total</td><td><b>R<span id="grandTotal">0.00</span></b></td></tr>
+    </tfoot>
+  </table>
 
-<select name="province" id="province" required>
-  <option value="">Select Province</option>
-  <option value="Gauteng">Gauteng</option>
-  <option value="KwaZulu-Natal">KwaZulu-Natal</option>
-  <option value="Western Cape">Western Cape</option>
-  <option value="Eastern Cape">Eastern Cape</option>
-  <option value="Free State">Free State</option>
-  <option value="Mpumalanga">Mpumalanga</option>
-  <option value="Limpopo">Limpopo</option>
-  <option value="North West">North West</option>
-  <option value="Northern Cape">Northern Cape</option>
-</select>
-
-<input type="text" name="zip" placeholder="Postal Code" required>
-</form>
-
-<h3>Cart:</h3>
-<table id="cartTable">
-  <thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead>
-  <tbody></tbody>
-  <tfoot>
-    <tr><td colspan="2">Shipping</td><td id="shippingCost">R0.00</td></tr>
-    <tr><td colspan="2">Total</td><td><b>R<span id="grandTotal">0.00</span></b></td></tr>
-  </tfoot>
-</table>
-
-<button id="payButton" disabled>Pay Now</button>
-
-<div id="status" class="info">Fill the form and click "Pay Now".</div>
+  <p><strong>Payment ID:</strong> <span id="paymentId"></span></p>
+  <p>We have sent a confirmation email to you (if provided).</p>
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const statusEl = document.getElementById("status");
-  const tbody = document.querySelector("#cartTable tbody");
-  const payButton = document.getElementById("payButton");
-  const shippingEl = document.getElementById("shippingCost");
-  const grandTotalEl = document.getElementById("grandTotal");
+  const orderData = JSON.parse(localStorage.getItem("lastOrder"));
 
-  // Cart items with variant IDs
-  const items = [
-    {title:"Okay Test Product", price:199, quantity:1, variantId:1234567890},
-    {title:"Extra Test Product", price:99, quantity:2, variantId:9876543210}
-  ];
+  if (!orderData) {
+    document.body.innerHTML = "<div class='container'><h1>No order found!</h1><p>Please place an order first.</p></div>";
+    return;
+  }
 
-  let subtotal = 0;
-  items.forEach(item=>{
+  const tbody = document.querySelector("#orderTable tbody");
+  orderData.items.forEach(item => {
     const tr = document.createElement("tr");
     tr.innerHTML = `<td>${item.title}</td><td>${item.quantity}</td><td>R${(item.price*item.quantity).toFixed(2)}</td>`;
     tbody.appendChild(tr);
-    subtotal += item.price * item.quantity;
   });
 
-  // Shipping rates
-  function calculateShipping(province){
-    const rates = {"Gauteng":50,"KwaZulu-Natal":55,"Western Cape":60,"Eastern Cape":65,
-                   "Free State":55,"Mpumalanga":60,"Limpopo":65,"North West":55,"Northern Cape":70};
-    return rates[province] || 0;
-  }
+  document.getElementById("shippingCost").textContent = "R" + orderData.shippingCost.toFixed(2);
+  document.getElementById("grandTotal").textContent = orderData.grandTotal.toFixed(2);
+  document.getElementById("paymentId").textContent = orderData.payment_id;
 
-  let shippingCost = 0;
-  let grandTotal = subtotal;
-
-  function updateTotals(){
-    grandTotal = subtotal + shippingCost;
-    shippingEl.textContent = "R" + shippingCost.toFixed(2);
-    grandTotalEl.textContent = grandTotal.toFixed(2);
-  }
-  updateTotals();
-
-  // Province selection updates shipping + enables button
-  const provinceSelect = document.getElementById("province");
-  provinceSelect.addEventListener("change", ()=>{
-    shippingCost = calculateShipping(provinceSelect.value);
-    updateTotals();
-    payButton.disabled = !provinceSelect.value;
-  });
-
-  // Initialize Yoco
-  const yoco = new YocoSDK({ publicKey:"pk_test_a3abafa43ol0djK02ad4" });
-
-  payButton.addEventListener("click", async () => {
-    const formData = new FormData(document.getElementById("checkoutForm"));
-    const province = formData.get("province");
-    if(!province){
-      statusEl.textContent = "⚠ Please select a province!";
-      statusEl.className="error";
-      return;
-    }
-
-    statusEl.textContent = "⏳ Opening Yoco payment popup...";
-    statusEl.className = "info";
-
-    try {
-      yoco.showPopup({
-        amountInCents: Math.round(grandTotal*100),
-        currency:"ZAR",
-        name:"StoreCollect Payment",
-        description:"Order payment",
-        callbacks:{
-          onSuccess: async function(result){
-            if(result && result.id){
-              statusEl.textContent = "✅ Payment successful!";
-              statusEl.className="success";
-
-              // Call your webhook
-              fetch("https://storecollect-pay.vercel.app/api/yoco-webhook",{
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body: JSON.stringify({
-                  items,
-                  shipping_cost: shippingCost,
-                  payment_id: result.id,
-                  financial_status:"paid",
-                  firstName: formData.get("firstName"),
-                  lastName: formData.get("lastName"),
-                  email: formData.get("email"),
-                  phone: formData.get("phone"),
-                  address: formData.get("address1"),
-                  city: formData.get("city"),
-                  province,
-                  zip: formData.get("zip")
-                })
-              })
-              .then(res => res.json())
-              .then(data => console.log("Webhook response:", data))
-              .catch(err => {
-                console.error("Webhook error:", err);
-                statusEl.textContent = "⚠ Payment ok, but order failed. Contact support.";
-                statusEl.className="error";
-              });
-
-              // Save order locally for thank-you page
-              localStorage.setItem("lastOrder", JSON.stringify({
-                items, grandTotal, shippingCost, payment_id: result.id
-              }));
-
-              setTimeout(() => window.location.href="thank-you.html", 1500);
-
-            } else {
-              statusEl.textContent = "⚠ Payment failed: No token returned";
-              statusEl.className="error";
-            }
-          },
-          onError: function(err){
-            console.error("Yoco popup error:", err);
-            statusEl.textContent = "⚠ Payment failed: " + (err.message || "Check console");
-            statusEl.className="error";
-          }
-        }
-      });
-    } catch(err){
-      console.error("Yoco exception:", err);
-      statusEl.textContent = "⚠ Yoco initialization failed: "+err.message;
-      statusEl.className="error";
-    }
-  });
+  // Optional: clear localStorage after displaying
+  localStorage.removeItem("lastOrder");
 });
 </script>
-
-</body>
-  </html><!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>StoreCollect Checkout</title>
-<script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
-<style>
-body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; }
-.container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
-input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:8px; }
-button { background:black; color:white; font-size:16px; cursor:pointer; }
-button:hover { background:#333; }
-#status { margin-top:20px; padding:12px; border-radius:8px; font-weight:bold; word-break: break-word; }
-.success { background: #d4edda; color: #155724; }
-.error { background: #f8d7da; color: #721c24; }
-.info { background: #fff3cd; color: #856404; }
-table { width:100%; border-collapse: collapse; margin-bottom:20px; }
-th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
-</style>
-</head>
-<body>
-
-<div class="container">
-<h2>StoreCollect Checkout</h2>
-
-<form id="checkoutForm">
-<input type="text" name="firstName" placeholder="First Name" required>
-<input type="text" name="lastName" placeholder="Last Name" required>
-<input type="email" name="email" placeholder="Email" required>
-<input type="text" name="phone" placeholder="Phone">
-<input type="text" name="address1" placeholder="Address" required>
-<input type="text" name="city" placeholder="City" required>
-
-<select name="province" id="province" required>
-  <option value="">Select Province</option>
-  <option value="Gauteng">Gauteng</option>
-  <option value="KwaZulu-Natal">KwaZulu-Natal</option>
-  <option value="Western Cape">Western Cape</option>
-  <option value="Eastern Cape">Eastern Cape</option>
-  <option value="Free State">Free State</option>
-  <option value="Mpumalanga">Mpumalanga</option>
-  <option value="Limpopo">Limpopo</option>
-  <option value="North West">North West</option>
-  <option value="Northern Cape">Northern Cape</option>
-</select>
-
-<input type="text" name="zip" placeholder="Postal Code" required>
-</form>
-
-<h3>Cart:</h3>
-<table id="cartTable">
-  <thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead>
-  <tbody></tbody>
-</table>
-
-<h3>Total: R<span id="grandTotal">0</span></h3>
-
-<button id="payButton">Pay Now</button>
-
-<div id="status" class="info">Fill the form and click "Pay Now".</div>
-</div>
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const statusEl = document.getElementById("status");
-  const tbody = document.querySelector("#cartTable tbody");
-  const payButton = document.getElementById("payButton");
-
-  // Cart items with variant IDs
-  const items = [
-    {title:"Okay Test Product", price:199, quantity:1, variantId:1234567890},
-    {title:"Extra Test Product", price:99, quantity:2, variantId:9876543210}
-  ];
-
-  let subtotal = 0;
-  items.forEach(item=>{
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${item.title}</td><td>${item.quantity}</td><td>R${(item.price*item.quantity).toFixed(2)}</td>`;
-    tbody.appendChild(tr);
-    subtotal += item.price * item.quantity;
-  });
-
-  const provinceSelect = document.getElementById("province");
-  let shippingCost = 0;
-  function calculateShipping(province){
-    const rates = {"Gauteng":50,"KwaZulu-Natal":55,"Western Cape":60,"Eastern Cape":65,
-                   "Free State":55,"Mpumalanga":60,"Limpopo":65,"North West":55,"Northern Cape":70};
-    return rates[province] || 70;
-  }
-
-  provinceSelect.addEventListener("change", ()=>{
-    shippingCost = calculateShipping(provinceSelect.value);
-    document.getElementById("grandTotal").textContent = (subtotal + shippingCost).toFixed(2);
-  });
-
-  document.getElementById("grandTotal").textContent = subtotal.toFixed(2);
-
-  // Initialize Yoco
-  const yoco = new YocoSDK({ publicKey:"pk_test_a3abafa43ol0djK02ad4" });
-
-  payButton.addEventListener("click", async () => {
-    const formData = new FormData(document.getElementById("checkoutForm"));
-    const province = formData.get("province");
-    if(!province){
-      statusEl.textContent = "⚠ Please select a province!";
-      statusEl.className="error";
-      return;
-    }
-
-    shippingCost = calculateShipping(province);
-    const grandTotal = subtotal + shippingCost;
-    statusEl.textContent = "⏳ Opening Yoco payment popup...";
-    statusEl.className = "info";
-
-    try {
-      yoco.showPopup({
-        amountInCents: Math.round(grandTotal*100),
-        currency:"ZAR",
-        name:"StoreCollect Payment",
-        description:"Order payment",
-        callbacks:{
-          onSuccess: async function(result){
-            console.log("Yoco result:", result); // ALWAYS log token
-
-            if(result && result.id){
-              statusEl.textContent = "✅ Payment successful! Token: " + result.id;
-              statusEl.className="success";
-
-              // Fire webhook asynchronously
-              fetch("https://storecollect-pay.vercel.app/api/yoco-webhook",{
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body: JSON.stringify({
-                  items,
-                  shipping_cost: shippingCost,
-                  payment_id: result.id,
-                  financial_status:"paid",
-                  firstName: formData.get("firstName"),
-                  lastName: formData.get("lastName"),
-                  email: formData.get("email"),
-                  phone: formData.get("phone"),
-                  address: formData.get("address1"),
-                  city: formData.get("city"),
-                  province,
-                  zip: formData.get("zip")
-                })
-              }).then(res => res.json())
-                .then(data => console.log("Webhook response:", data))
-                .catch(err => console.error("Webhook error:", err));
-
-              // ✅ Redirect to thank-you page regardless of webhook
-              setTimeout(() => window.location.href="thank-you.html", 1500);
-
-            } else {
-              statusEl.textContent = "⚠ Payment failed: No token returned";
-              statusEl.className="error";
-            }
-          },
-          onError: function(err){
-            console.error("Yoco popup error:", err);
-            statusEl.textContent = "⚠ Payment failed: " + (err.message || "Check console");
-            statusEl.className="error";
-          }
-        }
-      });
-    } catch(err){
-      console.error("Yoco exception:", err);
-      statusEl.textContent = "⚠ Yoco initialization failed: "+err.message;
-      statusEl.className="error";
-    }
-  });
-});
-</script>
-
 </body>
 </html>
