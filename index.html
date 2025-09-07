@@ -10,15 +10,13 @@ body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; 
 .container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
 input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:8px; }
 button { background:black; color:white; font-size:16px; cursor:pointer; }
-button:disabled { background:#999; cursor:not-allowed; }
-button:hover:not(:disabled) { background:#333; }
+button:hover { background:#333; }
 #status { margin-top:20px; padding:12px; border-radius:8px; font-weight:bold; word-break: break-word; }
 .success { background: #d4edda; color: #155724; }
 .error { background: #f8d7da; color: #721c24; }
 .info { background: #fff3cd; color: #856404; }
 table { width:100%; border-collapse: collapse; margin-bottom:20px; }
 th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
-tfoot td { font-weight:bold; }
 </style>
 </head>
 <body>
@@ -54,13 +52,11 @@ tfoot td { font-weight:bold; }
 <table id="cartTable">
   <thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead>
   <tbody></tbody>
-  <tfoot>
-    <tr><td colspan="2">Shipping</td><td id="shippingCost">R0.00</td></tr>
-    <tr><td colspan="2">Total</td><td><b>R<span id="grandTotal">0.00</span></b></td></tr>
-  </tfoot>
 </table>
 
-<button id="payButton" disabled>Pay Now</button>
+<h3>Total: R<span id="grandTotal">0</span></h3>
+
+<button id="payButton">Pay Now</button>
 
 <div id="status" class="info">Fill the form and click "Pay Now".</div>
 </div>
@@ -70,16 +66,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusEl = document.getElementById("status");
   const tbody = document.querySelector("#cartTable tbody");
   const payButton = document.getElementById("payButton");
-  const shippingEl = document.getElementById("shippingCost");
-  const grandTotalEl = document.getElementById("grandTotal");
 
-  // Cart items with variant IDs
-  const items = [
-    {title:"Okay Test Product", price:199, quantity:1, variantId:1234567890},
-    {title:"Extra Test Product", price:99, quantity:2, variantId:9876543210}
-  ];
+  // Read products from URL params
+  const params = new URLSearchParams(window.location.search);
+  const itemsParam = params.get("cart"); // JSON encoded
+  let items = [];
+  try { items = itemsParam ? JSON.parse(decodeURIComponent(itemsParam)) : []; } 
+  catch(e){ console.error("Cart decode error", e); }
+
+  if(items.length === 0){
+    // fallback
+    items = [
+      { title:"Okay Test Product", price:199, quantity:1, variantId:1234567890 }
+    ];
+  }
 
   let subtotal = 0;
+  tbody.innerHTML = "";
   items.forEach(item=>{
     const tr = document.createElement("tr");
     tr.innerHTML = `<td>${item.title}</td><td>${item.quantity}</td><td>R${(item.price*item.quantity).toFixed(2)}</td>`;
@@ -87,30 +90,20 @@ document.addEventListener("DOMContentLoaded", () => {
     subtotal += item.price * item.quantity;
   });
 
-  // Shipping rates
+  const provinceSelect = document.getElementById("province");
+  let shippingCost = 0;
   function calculateShipping(province){
     const rates = {"Gauteng":50,"KwaZulu-Natal":55,"Western Cape":60,"Eastern Cape":65,
                    "Free State":55,"Mpumalanga":60,"Limpopo":65,"North West":55,"Northern Cape":70};
-    return rates[province] || 0;
+    return rates[province] || 70;
   }
 
-  let shippingCost = 0;
-  let grandTotal = subtotal;
-
-  function updateTotals(){
-    grandTotal = subtotal + shippingCost;
-    shippingEl.textContent = "R" + shippingCost.toFixed(2);
-    grandTotalEl.textContent = grandTotal.toFixed(2);
-  }
-  updateTotals();
-
-  // Province selection updates shipping + enables button
-  const provinceSelect = document.getElementById("province");
   provinceSelect.addEventListener("change", ()=>{
     shippingCost = calculateShipping(provinceSelect.value);
-    updateTotals();
-    payButton.disabled = !provinceSelect.value;
+    document.getElementById("grandTotal").textContent = (subtotal + shippingCost).toFixed(2);
   });
+
+  document.getElementById("grandTotal").textContent = subtotal.toFixed(2);
 
   // Initialize Yoco
   const yoco = new YocoSDK({ publicKey:"pk_test_a3abafa43ol0djK02ad4" });
@@ -124,6 +117,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    shippingCost = calculateShipping(province);
+    const grandTotal = subtotal + shippingCost;
     statusEl.textContent = "⏳ Opening Yoco payment popup...";
     statusEl.className = "info";
 
@@ -135,11 +130,12 @@ document.addEventListener("DOMContentLoaded", () => {
         description:"Order payment",
         callbacks:{
           onSuccess: async function(result){
+            console.log("Yoco result:", result);
             if(result && result.id){
-              statusEl.textContent = "✅ Payment successful!";
+              statusEl.textContent = "✅ Payment successful! Token: " + result.id;
               statusEl.className="success";
 
-              // Call your webhook
+              // Fire webhook
               fetch("https://storecollect-pay.vercel.app/api/yoco-webhook",{
                 method:"POST",
                 headers:{"Content-Type":"application/json"},
@@ -160,19 +156,9 @@ document.addEventListener("DOMContentLoaded", () => {
               })
               .then(res => res.json())
               .then(data => console.log("Webhook response:", data))
-              .catch(err => {
-                console.error("Webhook error:", err);
-                statusEl.textContent = "⚠ Payment ok, but order failed. Contact support.";
-                statusEl.className="error";
-              });
+              .catch(err => console.error("Webhook error:", err));
 
-              // Save order locally for thank-you page
-              localStorage.setItem("lastOrder", JSON.stringify({
-                items, grandTotal, shippingCost, payment_id: result.id
-              }));
-
-              setTimeout(() => window.location.href="thank-you.html", 1500);
-
+              setTimeout(()=>window.location.href="thank-you.html",1500);
             } else {
               statusEl.textContent = "⚠ Payment failed: No token returned";
               statusEl.className="error";
@@ -195,4 +181,4 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 
 </body>
-  </html>
+</html>
