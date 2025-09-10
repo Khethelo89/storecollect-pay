@@ -107,8 +107,9 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const SHIPPING_COST = 100; // R100 shipping
-    const amountInCents = (total + SHIPPING_COST) * 100;
+    const SHIPPING_COST = 100;
+    const totalRands = total + SHIPPING_COST;
+    const amountInCents = Math.round(totalRands * 100); // ✅ multiply by 100
 
     statusEl.textContent = "Processing payment...";
     statusEl.className = "info";
