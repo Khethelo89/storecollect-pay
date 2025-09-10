@@ -72,7 +72,7 @@ export default async function handler(req, res) {
 
     // --- 3️⃣ Create Shopify order ---
     const shopifyResRaw = await fetch(
-      `https://YOUR_SHOPIFY_DOMAIN/admin/api/2025-01/orders.json`,
+      `https://b007a7-f0.myshopify.com/admin/api/2025-01/orders.json`,
       {
         method: "POST",
         headers: {
