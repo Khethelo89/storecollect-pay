@@ -1,134 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StoreCollect Checkout</title>
-  <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
-  <style>
-    body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; }
-    .container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
-    input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:8px; }
-    button { background:black; color:white; font-size:16px; cursor:pointer; }
-    button:hover { background:#333; }
-    #status { margin-top:20px; padding:12px; border-radius:8px; font-weight:bold; word-break: break-word; }
-    .success { background: #d4edda; color: #155724; }
-    .error { background: #f8d7da; color: #721c24; }
-    .info { background: #fff3cd; color: #856404; }
-    table { width:100%; border-collapse: collapse; margin-bottom:20px; }
-    th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StoreCollect Checkout</title>
+<script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
+<style>
+body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; }
+.container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:8px; }
+button { background:black; color:white; font-size:16px; cursor:pointer; }
+button:hover { background:#333; }
+#status { margin-top:20px; padding:12px; border-radius:8px; font-weight:bold; word-break: break-word; }
+.success { background: #d4edda; color: #155724; }
+.error { background: #f8d7da; color: #721c24; }
+.info { background: #fff3cd; color: #856404; }
+table { width:100%; border-collapse: collapse; margin-bottom:20px; }
+th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
+</style>
 </head>
 <body>
 
 <div class="container">
-  <h2>StoreCollect Checkout</h2>
+<h2>StoreCollect Checkout</h2>
 
-  <form id="checkoutForm">
-    <input type="text" name="firstName" placeholder="First Name" required>
-    <input type="text" name="lastName" placeholder="Last Name" required>
-    <input type="email" name="email" placeholder="Email" required>
-    <input type="text" name="phone" placeholder="Phone">
-    <input type="text" name="address1" placeholder="Address" required>
-    <input type="text" name="city" placeholder="City" required>
+<form id="checkoutForm">
+<input type="text" name="firstName" placeholder="First Name" required>
+<input type="text" name="lastName" placeholder="Last Name" required>
+<input type="email" name="email" placeholder="Email" required>
+<input type="text" name="phone" placeholder="Phone">
+<input type="text" name="address1" placeholder="Address" required>
+<input type="text" name="city" placeholder="City" required>
 
-    <select name="province" id="province" required>
-      <option value="">Select Province</option>
-      <option value="Gauteng">Gauteng</option>
-      <option value="KwaZulu-Natal">KwaZulu-Natal</option>
-      <option value="Western Cape">Western Cape</option>
-      <option value="Eastern Cape">Eastern Cape</option>
-      <option value="Free State">Free State</option>
-      <option value="Mpumalanga">Mpumalanga</option>
-      <option value="Limpopo">Limpopo</option>
-      <option value="North West">North West</option>
-      <option value="Northern Cape">Northern Cape</option>
-    </select>
+<select name="province" id="province" required>
+  <option value="">Select Province</option>
+  <option value="Gauteng">Gauteng</option>
+  <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+  <option value="Western Cape">Western Cape</option>
+  <option value="Eastern Cape">Eastern Cape</option>
+  <option value="Free State">Free State</option>
+  <option value="Mpumalanga">Mpumalanga</option>
+  <option value="Limpopo">Limpopo</option>
+  <option value="North West">North West</option>
+  <option value="Northern Cape">Northern Cape</option>
+</select>
 
-    <input type="text" name="zip" placeholder="Postal Code" required>
-  </form>
+<input type="text" name="zip" placeholder="Postal Code" required>
+</form>
 
-  <h3>Cart:</h3>
-  <table id="cartTable">
-    <thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead>
-    <tbody></tbody>
-  </table>
+<h3>Cart:</h3>
+<table id="cartTable">
+  <thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead>
+  <tbody></tbody>
+</table>
 
-  <h3>Total: R<span id="grandTotal">0</span></h3>
+<h3>Total: R<span id="grandTotal">0</span></h3>
 
-  <button id="payButton">Pay Now</button>
+<button id="payButton">Pay Now</button>
 
-  <div id="status" class="info">Fill the form and click "Pay Now".</div>
+<div id="status" class="info">Fill the form and click "Pay Now".</div>
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const statusEl = document.getElementById("status");
   const tbody = document.querySelector("#cartTable tbody");
-  const grandTotalEl = document.getElementById("grandTotal");
   const payButton = document.getElementById("payButton");
-
-  // --- Parse cart items from URL ---
-  const params = new URLSearchParams(window.location.search);
-  const cart = [];
-
-  const titles = params.getAll("title");
-  const prices = params.getAll("price");
-  const qtys = params.getAll("qty");
-
-  for (let i = 0; i < titles.length; i++) {
-    cart.push({
-      title: decodeURIComponent(titles[i]),
-      price: parseFloat(prices[i] || 0),
-      qty: parseInt(qtys[i] || 1)
-    });
-  }
-
-  if (cart.length === 0) {
-    statusEl.textContent = "No items in cart.";
-    statusEl.className = "error";
-    payButton.disabled = true;
-    return;
-  }
-
-  // --- Render cart ---
-  let total = 0;
-  cart.forEach(item => {
-    const row = document.createElement("tr");
-    row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${item.price}</td>`;
-    tbody.appendChild(row);
-    total += item.qty * item.price;
-  });
-  grandTotalEl.textContent = total;
-
-  // --- Yoco Setup ---
-  const yoco = new window.YocoSDK({
-    publicKey: "pk_test_a3abafa43ol0djK02ad4" // your key
-  });
-
-  payButton.addEventListener("click", async () => {
-    statusEl.textContent = "Processing payment...";
-    statusEl.className = "info";
-
-    yoco.showPopup({
-      amountInCents: total * 100,
-      currency: "ZAR",
-      name: "StoreCollect",
-      description: "Checkout Payment",
-      callback: (result) => {
-        if (result.error) {
-          statusEl.textContent = "Payment failed: " + result.error.message;
-          statusEl.className = "error";
-        } else {
-          statusEl.textContent = "Payment successful! ID: " + result.id;
-          statusEl.className = "success";
-          window.location.href = "/thankyou.html";
-        }
-      }
-    });
-  });
-});
-</script>
-
-</body>
-</html>
