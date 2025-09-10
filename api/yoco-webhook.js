@@ -10,9 +10,13 @@ export default async function handler(req, res) {
 
     console.log("Sending to Yoco:", { token, amountInCents, currency }); // Debug
 
+    // --- 1️⃣ Verify Yoco payment ---
     const yocoRes = await fetch("https://online.yoco.com/v1/charges/", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Auth-Secret-Key": process.env.YOCO_SECRET_KEY },
+      headers: { 
+        "Content-Type": "application/json", 
+        "X-Auth-Secret-Key": process.env.YOCO_SECRET_KEY 
+      },
       body: JSON.stringify({ token, amountInCents, currency })
     });
 
@@ -22,7 +26,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Yoco payment failed", details: yocoData });
     }
 
-    // Shopify order
+    // --- 2️⃣ Build Shopify order ---
     const SHIPPING_COST = 100;
     const orderData = {
       order: {
@@ -35,13 +39,32 @@ export default async function handler(req, res) {
       }
     };
 
+    // --- 3️⃣ Send order to Shopify ---
     const shopifyResRaw = await fetch("https://b007a7-f0.myshopify.com/admin/api/2025-01/orders.json", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Shopify-Access-Token": process.env.SHOPIFY_ACCESS_TOKEN },
+      headers: { 
+        "Content-Type": "application/json", 
+        "X-Shopify-Access-Token": process.env.SHOPIFY_ACCESS_TOKEN 
+      },
       body: JSON.stringify(orderData)
     });
 
     const shopifyText = await shopifyResRaw.text();
+
+    // --- 4️⃣ Parse Shopify response safely ---
     try {
       const shopifyRes = JSON.parse(shopifyText);
-      if (!
+      if (!shopifyResRaw.ok) {
+        return res.status(500).json({ error: "Shopify API failed", details: shopifyRes });
+      }
+      return res.status(200).json({ success: true, yoco: yocoData, shopify: shopifyRes });
+    } catch (err) {
+      // If Shopify returns HTML or invalid JSON
+      return res.status(500).json({ error: "Shopify did not return valid JSON", rawResponse: shopifyText });
+    }
+
+  } catch (err) {
+    console.error("Webhook error:", err);
+    return res.status(500).json({ error: err.message });
+  }
+}
