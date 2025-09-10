@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+          export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
     }
 
     // --- 2️⃣ Build Shopify order ---
-    const SHIPPING_COST = 100; // R100 shipping
+    const SHIPPING_COST = 100;
     const orderData = {
       order: {
         line_items: items.map(i => ({
@@ -48,29 +48,15 @@ export default async function handler(req, res) {
           quantity: i.quantity,
           price: i.price
         })),
-        shipping_lines: [
-          { price: SHIPPING_COST.toFixed(2), title: "Shipping" }
-        ],
+        shipping_lines: [{ price: SHIPPING_COST.toFixed(2), title: "Shipping" }],
         customer: { first_name: firstName, last_name: lastName, email, phone },
-        shipping_address: {
-          address1: address,
-          city,
-          province,
-          zip,
-          country: "South Africa",
-          phone
-        },
+        shipping_address: { address1: address, city, province, zip, country: "South Africa", phone },
         financial_status: "paid",
-        transactions: [{
-          kind: "sale",
-          status: "success",
-          gateway: "Yoco",
-          authorization: yocoData.id
-        }]
+        transactions: [{ kind: "sale", status: "success", gateway: "Yoco", authorization: yocoData.id }]
       }
     };
 
-    // --- 3️⃣ Create Shopify order ---
+    // --- 3️⃣ Send order to Shopify ---
     const shopifyResRaw = await fetch(
       "https://b007a7-f0.myshopify.com/admin/api/2025-01/orders.json",
       {
@@ -83,16 +69,20 @@ export default async function handler(req, res) {
       }
     );
 
-    // --- DEBUG LOG ---
+    // --- 4️⃣ Debug Shopify response ---
     const shopifyText = await shopifyResRaw.text();
+
     try {
       const shopifyRes = JSON.parse(shopifyText);
+
       if (!shopifyResRaw.ok) {
         return res.status(500).json({ error: "Shopify API failed", details: shopifyRes });
       }
+
       return res.status(200).json({ success: true, yoco: yocoData, shopify: shopifyRes });
+
     } catch (err) {
-      // If response is not JSON (like HTML error page)
+      // Shopify returned non-JSON (HTML error page)
       return res.status(500).json({
         error: "Shopify API did not return valid JSON",
         rawResponse: shopifyText
@@ -103,4 +93,4 @@ export default async function handler(req, res) {
     console.error("Webhook error:", err);
     return res.status(500).json({ error: err.message });
   }
-  }
+        }
