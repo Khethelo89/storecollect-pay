@@ -38,7 +38,6 @@
   <option value="United States">United States</option>
   <option value="United Kingdom">United Kingdom</option>
   <option value="Australia">Australia</option>
-  <!-- Add more countries as needed -->
 </select>
 
 <select name="province" id="province">
@@ -77,42 +76,30 @@ document.addEventListener("DOMContentLoaded", () => {
   const grandTotalEl = document.getElementById("grandTotal");
   const payButton = document.getElementById("payButton");
 
-  // --- Parse cart items from URL ---
-  const params = new URLSearchParams(window.location.search);
-  const cart = [];
-  const titles = params.getAll("title");
-  const prices = params.getAll("price");
-  const qtys = params.getAll("qty");
-
-  for (let i = 0; i < titles.length; i++) {
-    cart.push({
-      title: decodeURIComponent(titles[i]),
-      price: parseFloat(prices[i] || 0),
-      qty: parseInt(qtys[i] || 1)
-    });
-  }
-
-  if (cart.length === 0) {
-    cart.push({ title: "T-Shirt", price: 150, qty: 1 });
-  }
+  // Example cart items
+  const cart = [{ title: "T-Shirt", price: 150, qty: 1 }];
 
   let total = 0;
   cart.forEach(item => {
     const row = document.createElement("tr");
     row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${item.price}</td>`;
     tbody.appendChild(row);
-    total += item.qty * item.price;
+    total += item.price * item.qty;
   });
   grandTotalEl.textContent = total;
 
-  const yoco = new window.YocoSDK({
-    publicKey: "pk_test_a3abafa43ol0djK02ad4"
-  });
+  const yoco = new window.YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
 
   payButton.addEventListener("click", async () => {
     const form = document.getElementById("checkoutForm");
     const country = form.country.value;
     const province = form.province.value;
+
+    if (!form.firstName.value || !form.lastName.value || !form.email.value || !form.address1.value || !form.city.value || !form.zip.value) {
+      statusEl.textContent = "Please fill all required fields.";
+      statusEl.className = "error";
+      return;
+    }
 
     if (country === "South Africa" && !province) {
       statusEl.textContent = "Please select your province.";
@@ -120,16 +107,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const firstName = encodeURIComponent(form.firstName.value);
-    const lastName = encodeURIComponent(form.lastName.value);
-    const email = encodeURIComponent(form.email.value);
-    const phone = encodeURIComponent(form.phone.value);
-    const address = encodeURIComponent(form.address1.value);
-    const city = encodeURIComponent(form.city.value);
-    const zip = encodeURIComponent(form.zip.value);
-
     const SHIPPING_COST = 100; // R100 shipping
-    const amountInCents = (total + SHIPPING_COST) * 100; // Include shipping in payment
+    const amountInCents = (total + SHIPPING_COST) * 100;
 
     statusEl.textContent = "Processing payment...";
     statusEl.className = "info";
@@ -140,47 +119,50 @@ document.addEventListener("DOMContentLoaded", () => {
       name: "StoreCollect",
       description: "Checkout Payment",
       callback: async (result) => {
-        if (result.error) {
-          statusEl.textContent = "Payment failed: " + result.error.message;
+        if (result.error || !result.id) {
+          statusEl.textContent = "Payment failed: " + (result.error?.message || "No token returned");
           statusEl.className = "error";
-        } else {
-          statusEl.textContent = "Payment successful! Processing order...";
-          statusEl.className = "success";
+          return;
+        }
 
-          try {
-            const webhookRes = await fetch("/api/yoco-webhook", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                token: result.id,
-                amountInCents,
-                currency: "ZAR",
-                items: cart,
-                firstName: form.firstName.value,
-                lastName: form.lastName.value,
-                email: form.email.value,
-                phone: form.phone.value,
-                address: form.address1.value,
-                city: form.city.value,
-                province: province || "",
-                zip: form.zip.value
-              })
-            });
+        // Send to webhook
+        try {
+          const payload = {
+            token: result.id,
+            amountInCents,
+            currency: "ZAR",
+            items: cart,
+            firstName: form.firstName.value,
+            lastName: form.lastName.value,
+            email: form.email.value,
+            phone: form.phone.value,
+            address: form.address1.value,
+            city: form.city.value,
+            province: province || "",
+            zip: form.zip.value
+          };
 
-            const data = await webhookRes.json();
-            if (webhookRes.ok) {
-              const cartParams = cart.map(i =>
-                `title=${encodeURIComponent(i.title)}&price=${i.price}&qty=${i.qty}`
-              ).join("&");
-              window.location.href = `/thankyou.html?firstName=${firstName}&lastName=${lastName}&email=${email}&${cartParams}`;
-            } else {
-              statusEl.textContent = "Order failed: " + JSON.stringify(data);
-              statusEl.className = "error";
-            }
-          } catch (err) {
-            statusEl.textContent = "Order error: " + err.message;
+          console.log("Sending to webhook:", payload); // Debug log
+
+          const webhookRes = await fetch("/api/yoco-webhook", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          const data = await webhookRes.json();
+          if (!webhookRes.ok) {
+            statusEl.textContent = "Order failed: " + JSON.stringify(data);
             statusEl.className = "error";
+          } else {
+            statusEl.textContent = "Payment successful! Redirecting...";
+            statusEl.className = "success";
+            // redirect to thank you page
+            window.location.href = `/thankyou.html`;
           }
+        } catch (err) {
+          statusEl.textContent = "Order error: " + err.message;
+          statusEl.className = "error";
         }
       }
     });
@@ -189,4 +171,4 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 
 </body>
-</html>
+  </html>
