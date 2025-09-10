@@ -84,7 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- If no cart items in URL → default T-Shirt R150 ---
+  // --- Default cart if URL is empty ---
   if (cart.length === 0) {
     cart.push({ title: "T-Shirt", price: 150, qty: 1 });
   }
@@ -120,7 +120,20 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           statusEl.textContent = "Payment successful! ID: " + result.id;
           statusEl.className = "success";
-          window.location.href = "/thankyou.html";
+
+          // --- Get customer info ---
+          const form = document.getElementById("checkoutForm");
+          const firstName = encodeURIComponent(form.firstName.value);
+          const lastName = encodeURIComponent(form.lastName.value);
+          const email = encodeURIComponent(form.email.value);
+
+          // --- Build cart query string ---
+          const cartParams = cart.map(item => 
+            `title=${encodeURIComponent(item.title)}&price=${item.price}&qty=${item.qty}`
+          ).join("&");
+
+          // --- Redirect to thank-you page with customer + cart info ---
+          window.location.href = `/thankyou.html?firstName=${firstName}&lastName=${lastName}&email=${email}&${cartParams}`;
         }
       }
     });
