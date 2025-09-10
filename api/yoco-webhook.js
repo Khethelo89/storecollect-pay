@@ -1,25 +1,42 @@
+// /api/webhook.js
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method Not Allowed" });
 
   try {
     const { token, amountInCents, currency, items, firstName, lastName, email, phone, address, city, province, zip } = req.body;
 
+    // --- 0️⃣ Debug logs ---
+    console.log("Webhook received:", { token, amountInCents, currency });
+    console.log("Yoco Secret Key exists:", !!process.env.YOCO_SECRET_KEY);
+
+    if (!process.env.YOCO_SECRET_KEY) {
+      return res.status(500).json({ error: "Yoco secret key is missing in environment variables" });
+    }
     if (!token || !amountInCents || !items?.length) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    console.log("Sending to Yoco:", { token, amountInCents, currency }); // Debug
-
     // --- 1️⃣ Verify Yoco payment ---
+    const yocoPayload = {
+      token,
+      amountInCents: Number(amountInCents),
+      currency
+    };
+    console.log("Sending to Yoco:", yocoPayload);
+
     const yocoRes = await fetch("https://online.yoco.com/v1/charges/", {
-  method: "POST",
-  headers: { "Content-Type": "application/json", "X-Auth-Secret-Key": process.env.YOCO_SECRET_KEY },
-  body: JSON.stringify({ token, amountInCents, currency }) // amountInCents already multiplied by 100
-});
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json", 
+        "X-Auth-Secret-Key": process.env.YOCO_SECRET_KEY 
+      },
+      body: JSON.stringify(yocoPayload)
+    });
 
     const yocoData = await yocoRes.json();
 
     if (!yocoRes.ok || yocoData.status !== "successful") {
+      console.error("Yoco payment failed:", yocoData);
       return res.status(400).json({ error: "Yoco payment failed", details: yocoData });
     }
 
@@ -56,7 +73,6 @@ export default async function handler(req, res) {
       }
       return res.status(200).json({ success: true, yoco: yocoData, shopify: shopifyRes });
     } catch (err) {
-      // If Shopify returns HTML or invalid JSON
       return res.status(500).json({ error: "Shopify did not return valid JSON", rawResponse: shopifyText });
     }
 
