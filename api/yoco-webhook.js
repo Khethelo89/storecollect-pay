@@ -72,7 +72,7 @@ export default async function handler(req, res) {
 
     // --- 3️⃣ Create Shopify order ---
     const shopifyResRaw = await fetch(
-      `https://b007a7-f0.myshopify.com/admin/api/2025-01/orders.json`,
+      "https://b007a7-f0.myshopify.com/admin/api/2025-01/orders.json",
       {
         method: "POST",
         headers: {
@@ -83,15 +83,24 @@ export default async function handler(req, res) {
       }
     );
 
-    const shopifyRes = await shopifyResRaw.json();
-    if (!shopifyResRaw.ok) {
-      return res.status(500).json({ error: "Shopify API failed", details: shopifyRes });
+    // --- DEBUG LOG ---
+    const shopifyText = await shopifyResRaw.text();
+    try {
+      const shopifyRes = JSON.parse(shopifyText);
+      if (!shopifyResRaw.ok) {
+        return res.status(500).json({ error: "Shopify API failed", details: shopifyRes });
+      }
+      return res.status(200).json({ success: true, yoco: yocoData, shopify: shopifyRes });
+    } catch (err) {
+      // If response is not JSON (like HTML error page)
+      return res.status(500).json({
+        error: "Shopify API did not return valid JSON",
+        rawResponse: shopifyText
+      });
     }
-
-    return res.status(200).json({ success: true, yoco: yocoData, shopify: shopifyRes });
 
   } catch (err) {
     console.error("Webhook error:", err);
     return res.status(500).json({ error: err.message });
   }
-}
+  }
