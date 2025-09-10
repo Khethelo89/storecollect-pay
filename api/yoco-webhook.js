@@ -12,13 +12,10 @@ export default async function handler(req, res) {
 
     // --- 1️⃣ Verify Yoco payment ---
     const yocoRes = await fetch("https://online.yoco.com/v1/charges/", {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json", 
-        "X-Auth-Secret-Key": process.env.YOCO_SECRET_KEY 
-      },
-      body: JSON.stringify({ token, amountInCents, currency })
-    });
+  method: "POST",
+  headers: { "Content-Type": "application/json", "X-Auth-Secret-Key": process.env.YOCO_SECRET_KEY },
+  body: JSON.stringify({ token, amountInCents, currency }) // amountInCents already multiplied by 100
+});
 
     const yocoData = await yocoRes.json();
 
