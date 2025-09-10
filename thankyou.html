@@ -1,61 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Thank You - StoreCollect</title>
-<style>
-body { font-family: Arial, sans-serif; text-align:center; padding:20px; background:#f3f3f3; }
-.container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
-h1 { color: #28a745; }
-table { width:100%; border-collapse: collapse; margin-bottom:20px; }
-th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
-tfoot td { font-weight:bold; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thank You - StoreCollect</title>
+  <style>
+    body { font-family: Arial; background:#f3f3f3; text-align:center; padding:50px; }
+    .container { background:white; padding:30px; border-radius:12px; max-width:600px; margin:auto; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+    table { width:100%; border-collapse: collapse; margin:20px 0; }
+    th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
+    h1 { color: green; }
+    a { display:inline-block; margin-top:20px; padding:10px 20px; background:black; color:white; text-decoration:none; border-radius:8px; }
+    a:hover { background:#333; }
+  </style>
 </head>
 <body>
-<div class="container">
-  <h1>Thank You for Your Order!</h1>
-  <p>Your payment was successful. Here is your order summary:</p>
 
-  <table id="orderTable">
+<div class="container">
+  <h1>🎉 Thank You!</h1>
+  <p id="customerInfo"></p>
+
+  <h3>Order Details:</h3>
+  <table>
     <thead>
       <tr><th>Product</th><th>Qty</th><th>Price</th></tr>
     </thead>
-    <tbody></tbody>
-    <tfoot>
-      <tr><td colspan="2">Shipping</td><td id="shippingCost">R0.00</td></tr>
-      <tr><td colspan="2">Total</td><td><b>R<span id="grandTotal">0.00</span></b></td></tr>
-    </tfoot>
+    <tbody id="orderTable"></tbody>
   </table>
+  <h3>Total: R<span id="totalAmount">0</span></h3>
 
-  <p><strong>Payment ID:</strong> <span id="paymentId"></span></p>
-  <p>We have sent a confirmation email to you (if provided).</p>
+  <a href="https://storecollect.net">Back to StoreCollect</a>
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const orderData = JSON.parse(localStorage.getItem("lastOrder"));
+  const params = new URLSearchParams(window.location.search);
 
-  if (!orderData) {
-    document.body.innerHTML = "<div class='container'><h1>No order found!</h1><p>Please place an order first.</p></div>";
-    return;
+  // Customer info
+  const firstName = params.get("firstName") || "";
+  const lastName = params.get("lastName") || "";
+  const email = params.get("email") || "";
+  document.getElementById("customerInfo").textContent = `Customer: ${firstName} ${lastName} | Email: ${email}`;
+
+  // Order info
+  const titles = params.getAll("title");
+  const prices = params.getAll("price");
+  const qtys = params.getAll("qty");
+
+  const tbody = document.getElementById("orderTable");
+  let total = 0;
+
+  for (let i = 0; i < titles.length; i++) {
+    const tr = document.createElement("tr");
+    const price = parseFloat(prices[i] || 0);
+    const qty = parseInt(qtys[i] || 1);
+    tr.innerHTML = `<td>${decodeURIComponent(titles[i])}</td><td>${qty}</td><td>R${price}</td>`;
+    tbody.appendChild(tr);
+    total += price * qty;
   }
 
-  const tbody = document.querySelector("#orderTable tbody");
-  orderData.items.forEach(item => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${item.title}</td><td>${item.quantity}</td><td>R${(item.price*item.quantity).toFixed(2)}</td>`;
-    tbody.appendChild(tr);
-  });
-
-  document.getElementById("shippingCost").textContent = "R" + orderData.shippingCost.toFixed(2);
-  document.getElementById("grandTotal").textContent = orderData.grandTotal.toFixed(2);
-  document.getElementById("paymentId").textContent = orderData.payment_id;
-
-  // Optional: clear localStorage after displaying
-  localStorage.removeItem("lastOrder");
+  document.getElementById("totalAmount").textContent = total;
 });
 </script>
+
 </body>
 </html>
