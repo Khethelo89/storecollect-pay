@@ -148,7 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
           statusEl.className = "success";
 
           try {
-            const webhookRes = await fetch("/api/webhook", {
+            const webhookRes = await fetch("/api/yoco-webhook", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
