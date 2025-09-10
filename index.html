@@ -1,64 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StoreCollect Checkout</title>
-  <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
-  <style>
-    body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; }
-    .container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
-    input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:8px; }
-    button { background:black; color:white; font-size:16px; cursor:pointer; }
-    button:hover { background:#333; }
-    #status { margin-top:20px; padding:12px; border-radius:8px; font-weight:bold; word-break: break-word; }
-    .success { background: #d4edda; color: #155724; }
-    .error { background: #f8d7da; color: #721c24; }
-    .info { background: #fff3cd; color: #856404; }
-    table { width:100%; border-collapse: collapse; margin-bottom:20px; }
-    th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StoreCollect Checkout</title>
+<script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
+<style>
+  body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; }
+  .container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+  input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:8px; }
+  button { background:black; color:white; font-size:16px; cursor:pointer; }
+  button:hover { background:#333; }
+  #status { margin-top:20px; padding:12px; border-radius:8px; font-weight:bold; word-break: break-word; }
+  .success { background: #d4edda; color: #155724; }
+  .error { background: #f8d7da; color: #721c24; }
+  .info { background: #fff3cd; color: #856404; }
+  table { width:100%; border-collapse: collapse; margin-bottom:20px; }
+  th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
+</style>
 </head>
 <body>
 
 <div class="container">
-  <h2>StoreCollect Checkout</h2>
+<h2>StoreCollect Checkout</h2>
 
-  <form id="checkoutForm">
-    <input type="text" name="firstName" placeholder="First Name" required>
-    <input type="text" name="lastName" placeholder="Last Name" required>
-    <input type="email" name="email" placeholder="Email" required>
-    <input type="text" name="phone" placeholder="Phone">
-    <input type="text" name="address1" placeholder="Address" required>
-    <input type="text" name="city" placeholder="City" required>
+<form id="checkoutForm">
+<input type="text" name="firstName" placeholder="First Name" required>
+<input type="text" name="lastName" placeholder="Last Name" required>
+<input type="email" name="email" placeholder="Email" required>
+<input type="text" name="phone" placeholder="Phone">
+<input type="text" name="address1" placeholder="Address" required>
+<input type="text" name="city" placeholder="City" required>
 
-    <select name="province" id="province" required>
-      <option value="">Select Province</option>
-      <option value="Gauteng">Gauteng</option>
-      <option value="KwaZulu-Natal">KwaZulu-Natal</option>
-      <option value="Western Cape">Western Cape</option>
-      <option value="Eastern Cape">Eastern Cape</option>
-      <option value="Free State">Free State</option>
-      <option value="Mpumalanga">Mpumalanga</option>
-      <option value="Limpopo">Limpopo</option>
-      <option value="North West">North West</option>
-      <option value="Northern Cape">Northern Cape</option>
-    </select>
+<select name="country" id="country" required>
+  <option value="">Select Country</option>
+  <option value="South Africa">South Africa</option>
+  <option value="United States">United States</option>
+  <option value="United Kingdom">United Kingdom</option>
+  <option value="Australia">Australia</option>
+  <!-- Add more countries as needed -->
+</select>
 
-    <input type="text" name="zip" placeholder="Postal Code" required>
-  </form>
+<select name="province" id="province">
+  <option value="">Select Province (if South Africa)</option>
+  <option value="Gauteng">Gauteng</option>
+  <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+  <option value="Western Cape">Western Cape</option>
+  <option value="Eastern Cape">Eastern Cape</option>
+  <option value="Free State">Free State</option>
+  <option value="Mpumalanga">Mpumalanga</option>
+  <option value="Limpopo">Limpopo</option>
+  <option value="North West">North West</option>
+  <option value="Northern Cape">Northern Cape</option>
+</select>
 
-  <h3>Cart:</h3>
-  <table id="cartTable">
-    <thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead>
-    <tbody></tbody>
-  </table>
+<input type="text" name="zip" placeholder="Postal Code" required>
+</form>
 
-  <h3>Total: R<span id="grandTotal">0</span></h3>
+<h3>Cart:</h3>
+<table id="cartTable">
+  <thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead>
+  <tbody></tbody>
+</table>
 
-  <button id="payButton">Pay Now</button>
+<h3>Total: R<span id="grandTotal">0</span></h3>
 
-  <div id="status" class="info">Fill the form and click "Pay Now".</div>
+<button id="payButton">Pay Now</button>
+
+<div id="status" class="info">Fill the form and click "Pay Now".</div>
 </div>
 
 <script>
@@ -71,7 +80,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Parse cart items from URL ---
   const params = new URLSearchParams(window.location.search);
   const cart = [];
-
   const titles = params.getAll("title");
   const prices = params.getAll("price");
   const qtys = params.getAll("qty");
@@ -84,12 +92,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- Default cart if URL is empty ---
   if (cart.length === 0) {
     cart.push({ title: "T-Shirt", price: 150, qty: 1 });
   }
 
-  // --- Render cart ---
   let total = 0;
   cart.forEach(item => {
     const row = document.createElement("tr");
@@ -99,41 +105,82 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   grandTotalEl.textContent = total;
 
-  // --- Yoco Setup ---
   const yoco = new window.YocoSDK({
     publicKey: "pk_test_a3abafa43ol0djK02ad4"
   });
 
   payButton.addEventListener("click", async () => {
+    const form = document.getElementById("checkoutForm");
+    const country = form.country.value;
+    const province = form.province.value;
+
+    if (country === "South Africa" && !province) {
+      statusEl.textContent = "Please select your province.";
+      statusEl.className = "error";
+      return;
+    }
+
+    const firstName = encodeURIComponent(form.firstName.value);
+    const lastName = encodeURIComponent(form.lastName.value);
+    const email = encodeURIComponent(form.email.value);
+    const phone = encodeURIComponent(form.phone.value);
+    const address = encodeURIComponent(form.address1.value);
+    const city = encodeURIComponent(form.city.value);
+    const zip = encodeURIComponent(form.zip.value);
+
+    const SHIPPING_COST = 100; // R100 shipping
+    const amountInCents = (total + SHIPPING_COST) * 100; // Include shipping in payment
+
     statusEl.textContent = "Processing payment...";
     statusEl.className = "info";
 
     yoco.showPopup({
-      amountInCents: total * 100,
+      amountInCents,
       currency: "ZAR",
       name: "StoreCollect",
       description: "Checkout Payment",
-      callback: (result) => {
+      callback: async (result) => {
         if (result.error) {
           statusEl.textContent = "Payment failed: " + result.error.message;
           statusEl.className = "error";
         } else {
-          statusEl.textContent = "Payment successful! ID: " + result.id;
+          statusEl.textContent = "Payment successful! Processing order...";
           statusEl.className = "success";
 
-          // --- Get customer info ---
-          const form = document.getElementById("checkoutForm");
-          const firstName = encodeURIComponent(form.firstName.value);
-          const lastName = encodeURIComponent(form.lastName.value);
-          const email = encodeURIComponent(form.email.value);
+          try {
+            const webhookRes = await fetch("/api/webhook", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                token: result.id,
+                amountInCents,
+                currency: "ZAR",
+                items: cart,
+                firstName: form.firstName.value,
+                lastName: form.lastName.value,
+                email: form.email.value,
+                phone: form.phone.value,
+                address: form.address1.value,
+                city: form.city.value,
+                province: province || "",
+                zip: form.zip.value
+              })
+            });
 
-          // --- Build cart query string ---
-          const cartParams = cart.map(item => 
-            `title=${encodeURIComponent(item.title)}&price=${item.price}&qty=${item.qty}`
-          ).join("&");
-
-          // --- Redirect to thank-you page with customer + cart info ---
-          window.location.href = `/thankyou.html?firstName=${firstName}&lastName=${lastName}&email=${email}&${cartParams}`;
+            const data = await webhookRes.json();
+            if (webhookRes.ok) {
+              const cartParams = cart.map(i =>
+                `title=${encodeURIComponent(i.title)}&price=${i.price}&qty=${i.qty}`
+              ).join("&");
+              window.location.href = `/thankyou.html?firstName=${firstName}&lastName=${lastName}&email=${email}&${cartParams}`;
+            } else {
+              statusEl.textContent = "Order failed: " + JSON.stringify(data);
+              statusEl.className = "error";
+            }
+          } catch (err) {
+            statusEl.textContent = "Order error: " + err.message;
+            statusEl.className = "error";
+          }
         }
       }
     });
