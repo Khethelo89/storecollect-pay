@@ -6,17 +6,17 @@
 <title>StoreCollect Checkout</title>
 <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
 <style>
-  body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; }
-  .container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
-  input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:8px; }
-  button { background:black; color:white; font-size:16px; cursor:pointer; }
-  button:hover { background:#333; }
-  #status { margin-top:20px; padding:12px; border-radius:8px; font-weight:bold; word-break: break-word; }
-  .success { background: #d4edda; color: #155724; }
-  .error { background: #f8d7da; color: #721c24; }
-  .info { background: #fff3cd; color: #856404; }
-  table { width:100%; border-collapse: collapse; margin-bottom:20px; }
-  th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
+body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; }
+.container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:8px; }
+button { background:black; color:white; font-size:16px; cursor:pointer; }
+button:hover { background:#333; }
+#status { margin-top:20px; padding:12px; border-radius:8px; font-weight:bold; word-break: break-word; }
+.success { background: #d4edda; color: #155724; }
+.error { background: #f8d7da; color: #721c24; }
+.info { background: #fff3cd; color: #856404; }
+table { width:100%; border-collapse: collapse; margin-bottom:20px; }
+th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
 </style>
 </head>
 <body>
@@ -25,47 +25,36 @@
 <h2>StoreCollect Checkout</h2>
 
 <form id="checkoutForm">
-  <input type="text" name="firstName" placeholder="First Name" required>
-  <input type="text" name="lastName" placeholder="Last Name" required>
-  <input type="email" name="email" placeholder="Email" required>
-  <input type="text" name="phone" placeholder="Phone">
-  <input type="text" name="address1" placeholder="Address" required>
-  <input type="text" name="city" placeholder="City" required>
-
-  <select name="country" id="country" required>
-    <option value="">Select Country</option>
-    <option value="South Africa">South Africa</option>
-    <option value="United States">United States</option>
-    <option value="United Kingdom">United Kingdom</option>
-    <option value="Australia">Australia</option>
-  </select>
-
-  <select name="province" id="province">
-    <option value="">Select Province (if South Africa)</option>
-    <option value="Gauteng">Gauteng</option>
-    <option value="KwaZulu-Natal">KwaZulu-Natal</option>
-    <option value="Western Cape">Western Cape</option>
-    <option value="Eastern Cape">Eastern Cape</option>
-    <option value="Free State">Free State</option>
-    <option value="Mpumalanga">Mpumalanga</option>
-    <option value="Limpopo">Limpopo</option>
-    <option value="North West">North West</option>
-    <option value="Northern Cape">Northern Cape</option>
-  </select>
-
-  <input type="text" name="zip" placeholder="Postal Code" required>
+<input type="text" name="firstName" placeholder="First Name" required>
+<input type="text" name="lastName" placeholder="Last Name" required>
+<input type="email" name="email" placeholder="Email" required>
+<input type="text" name="phone" placeholder="Phone">
+<input type="text" name="address1" placeholder="Address" required>
+<input type="text" name="city" placeholder="City" required>
+<select name="province" id="province" required>
+  <option value="">Select Province</option>
+  <option value="Gauteng">Gauteng</option>
+  <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+  <option value="Western Cape">Western Cape</option>
+  <option value="Eastern Cape">Eastern Cape</option>
+  <option value="Free State">Free State</option>
+  <option value="Mpumalanga">Mpumalanga</option>
+  <option value="Limpopo">Limpopo</option>
+  <option value="North West">North West</option>
+  <option value="Northern Cape">Northern Cape</option>
+</select>
+<input type="text" name="zip" placeholder="Postal Code" required>
 </form>
 
 <h3>Cart:</h3>
 <table id="cartTable">
-  <thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead>
-  <tbody></tbody>
+<thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead>
+<tbody></tbody>
 </table>
 
 <h3>Total: R<span id="grandTotal">0</span></h3>
 
 <button id="payButton">Pay Now</button>
-
 <div id="status" class="info">Fill the form and click "Pay Now".</div>
 </div>
 
@@ -76,16 +65,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const grandTotalEl = document.getElementById("grandTotal");
   const payButton = document.getElementById("payButton");
 
-  // ✅ Default test cart
-  const cart = [
-    { title: "Test Red T-Shirt", price: 250.00, qty: 1, variantId: 101 },
-    { title: "Test Blue Hoodie", price: 450.00, qty: 1, variantId: 102 },
-    { title: "Test Black Cap", price: 150.00, qty: 1, variantId: 103 }
-  ];
-
-  // Display cart
+  const cart = [{ title: "T-Shirt", price: 150, qty: 1 }];
   let total = 0;
-  tbody.innerHTML = "";
   cart.forEach(item => {
     const row = document.createElement("tr");
     row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${item.price}</td>`;
@@ -96,25 +77,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const yoco = new window.YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
 
-  payButton.addEventListener("click", () => {
+  payButton.addEventListener("click", async () => {
     const form = document.getElementById("checkoutForm");
-    const country = form.country.value;
-    const province = form.province.value;
-
     if (!form.firstName.value || !form.lastName.value || !form.email.value || !form.address1.value || !form.city.value || !form.zip.value) {
       statusEl.textContent = "Please fill all required fields.";
       statusEl.className = "error";
       return;
     }
-    if (country === "South Africa" && !province) {
+    if (!form.province.value) {
       statusEl.textContent = "Please select your province.";
       statusEl.className = "error";
       return;
     }
 
     const SHIPPING_COST = 100;
-    const totalRands = total + SHIPPING_COST;
-    const amountInCents = Math.round(totalRands * 100);
+    const amountInCents = Math.round((total + SHIPPING_COST) * 100);
 
     statusEl.textContent = "Processing payment...";
     statusEl.className = "info";
@@ -124,25 +101,54 @@ document.addEventListener("DOMContentLoaded", () => {
       currency: "ZAR",
       name: "StoreCollect",
       description: "Checkout Payment",
-      callback: (result) => {
-        if (result.error || !result.id) {
-          statusEl.textContent = "Payment failed: " + (result.error?.message || "No token returned");
+      callback: async (result) => {
+        if (!result.id) {
+          statusEl.textContent = "Payment failed: No token returned";
           statusEl.className = "error";
           return;
         }
 
-        // 🔹 Log payload for testing
         const payload = {
           token: result.id,
           amountInCents,
           currency: "ZAR",
-          items: cart.map(i => ({
-            title: i.title,
-            quantity: i.qty,
-            price: i.price.toFixed(2),
-            variantId: i.variantId
-          })),
+          items: cart,
           firstName: form.firstName.value,
           lastName: form.lastName.value,
-          email: form.email
+          email: form.email.value,
+          phone: form.phone.value,
+          address: form.address1.value,
+          city: form.city.value,
+          province: form.province.value,
+          zip: form.zip.value
+        };
+
+        console.log("Sending to webhook:", payload);
+
+        try {
+          const res = await fetch("/api/yoco-webhook", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            statusEl.textContent = "Order failed: " + JSON.stringify(data);
+            statusEl.className = "error";
+          } else {
+            statusEl.textContent = "Payment successful! Redirecting...";
+            statusEl.className = "success";
+            window.location.href = "/thankyou.html";
+          }
+        } catch (err) {
+          statusEl.textContent = "Order error: " + err.message;
+          statusEl.className = "error";
+        }
+      }
+    });
+  });
+});
+</script>
+</body>
+</html>
                                             </html>
