@@ -73,7 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
     tbody.appendChild(row);
     total += item.price * item.qty;
   });
-  grandTotalEl.textContent = total;
+  grandTotalEl.textContent = total + 100;
 
   const yoco = new window.YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
 
