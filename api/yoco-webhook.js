@@ -1,46 +1,86 @@
 // /api/yoco-webhook.js
+// /api/webhook.js
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method Not Allowed" });
 
   try {
-    const { token, amountInCents, currency, items, firstName, lastName, email, phone, address, city, province, zip } = req.body;
+    const { token, currency, items, firstName, lastName, email, phone, address, city, province, zip } = req.body;
 
-    if (!token || !amountInCents || !items?.length) return res.status(400).json({ error: "Missing required fields" });
+    if (!token || !items?.length) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    if (!process.env.YOCO_SECRET_KEY) {
+      return res.status(500).json({ error: "Yoco secret key missing" });
+    }
+
+    // --- 1️⃣ Calculate total ---
+    const SHIPPING_COST = 100;
+    const lineTotal = items.reduce((sum, i) => sum + Number(i.price) * Number(i.quantity), 0);
+    const totalAmount = lineTotal + SHIPPING_COST;
+    const amountInCents = Math.round(totalAmount * 100); // for Yoco
 
     console.log("Sending to Yoco:", { token, amountInCents, currency });
 
+    // --- 2️⃣ Charge Yoco ---
     const yocoRes = await fetch("https://online.yoco.com/v1/charges/", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Auth-Secret-Key": process.env.YOCO_SECRET_KEY },
+      headers: { 
+        "Content-Type": "application/json",
+        "X-Auth-Secret-Key": process.env.YOCO_SECRET_KEY
+      },
       body: JSON.stringify({ token, amountInCents, currency })
     });
-    const yocoData = await yocoRes.json();
-    if (!yocoRes.ok || yocoData.status !== "successful") return res.status(400).json({ error: "Yoco payment failed", details: yocoData });
 
-    const SHIPPING_COST = 100;
+    const yocoData = await yocoRes.json();
+
+    if (!yocoRes.ok || yocoData.status !== "successful") {
+      console.error("Yoco payment failed:", yocoData);
+      return res.status(400).json({ error: "Yoco payment failed", details: yocoData });
+    }
+
+    // --- 3️⃣ Build Shopify order ---
     const orderData = {
       order: {
-        line_items: items.map(i => ({ title: i.title, variant_id: i.variantId, quantity: i.quantity, price: i.price })),
+        line_items: items.map(i => ({
+          title: i.title,
+          variant_id: i.variantId,
+          quantity: i.quantity,
+          price: i.price
+        })),
         shipping_lines: [{ price: SHIPPING_COST.toFixed(2), title: "Shipping" }],
         customer: { first_name: firstName, last_name: lastName, email, phone },
         shipping_address: { address1: address, city, province, zip, country: "South Africa", phone },
         financial_status: "paid",
-        transactions: [{ kind: "sale", status: "success", gateway: "Yoco", authorization: yocoData.id }]
+        transactions: [{
+          kind: "sale",
+          status: "success",
+          gateway: "Yoco",
+          authorization: yocoData.id,
+          amount: totalAmount.toFixed(2) // ✅ transaction amount must match order total
+        }]
       }
     };
 
+    // --- 4️⃣ Send order to Shopify ---
     const shopifyResRaw = await fetch("https://b007a7-f0.myshopify.com/admin/api/2025-01/orders.json", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Shopify-Access-Token": process.env.SHOPIFY_ACCESS_TOKEN },
+      headers: { 
+        "Content-Type": "application/json",
+        "X-Shopify-Access-Token": process.env.SHOPIFY_ACCESS_TOKEN
+      },
       body: JSON.stringify(orderData)
     });
 
     const shopifyText = await shopifyResRaw.text();
     try {
       const shopifyRes = JSON.parse(shopifyText);
-      if (!shopifyResRaw.ok) return res.status(500).json({ error: "Shopify API failed", details: shopifyRes });
+      if (!shopifyResRaw.ok) {
+        return res.status(500).json({ error: "Shopify API failed", details: shopifyRes });
+      }
+      console.log("Order created:", shopifyRes.id);
       return res.status(200).json({ success: true, yoco: yocoData, shopify: shopifyRes });
-    } catch {
+    } catch (err) {
       return res.status(500).json({ error: "Shopify did not return valid JSON", rawResponse: shopifyText });
     }
 
@@ -48,4 +88,4 @@ export default async function handler(req, res) {
     console.error("Webhook error:", err);
     return res.status(500).json({ error: err.message });
   }
-        }
+}
