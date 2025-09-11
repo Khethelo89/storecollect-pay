@@ -25,35 +25,35 @@
 <h2>StoreCollect Checkout</h2>
 
 <form id="checkoutForm">
-<input type="text" name="firstName" placeholder="First Name" required>
-<input type="text" name="lastName" placeholder="Last Name" required>
-<input type="email" name="email" placeholder="Email" required>
-<input type="text" name="phone" placeholder="Phone">
-<input type="text" name="address1" placeholder="Address" required>
-<input type="text" name="city" placeholder="City" required>
+  <input type="text" name="firstName" placeholder="First Name" required>
+  <input type="text" name="lastName" placeholder="Last Name" required>
+  <input type="email" name="email" placeholder="Email" required>
+  <input type="text" name="phone" placeholder="Phone">
+  <input type="text" name="address1" placeholder="Address" required>
+  <input type="text" name="city" placeholder="City" required>
 
-<select name="country" id="country" required>
-  <option value="">Select Country</option>
-  <option value="South Africa">South Africa</option>
-  <option value="United States">United States</option>
-  <option value="United Kingdom">United Kingdom</option>
-  <option value="Australia">Australia</option>
-</select>
+  <select name="country" id="country" required>
+    <option value="">Select Country</option>
+    <option value="South Africa">South Africa</option>
+    <option value="United States">United States</option>
+    <option value="United Kingdom">United Kingdom</option>
+    <option value="Australia">Australia</option>
+  </select>
 
-<select name="province" id="province">
-  <option value="">Select Province (if South Africa)</option>
-  <option value="Gauteng">Gauteng</option>
-  <option value="KwaZulu-Natal">KwaZulu-Natal</option>
-  <option value="Western Cape">Western Cape</option>
-  <option value="Eastern Cape">Eastern Cape</option>
-  <option value="Free State">Free State</option>
-  <option value="Mpumalanga">Mpumalanga</option>
-  <option value="Limpopo">Limpopo</option>
-  <option value="North West">North West</option>
-  <option value="Northern Cape">Northern Cape</option>
-</select>
+  <select name="province" id="province">
+    <option value="">Select Province (if South Africa)</option>
+    <option value="Gauteng">Gauteng</option>
+    <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+    <option value="Western Cape">Western Cape</option>
+    <option value="Eastern Cape">Eastern Cape</option>
+    <option value="Free State">Free State</option>
+    <option value="Mpumalanga">Mpumalanga</option>
+    <option value="Limpopo">Limpopo</option>
+    <option value="North West">North West</option>
+    <option value="Northern Cape">Northern Cape</option>
+  </select>
 
-<input type="text" name="zip" placeholder="Postal Code" required>
+  <input type="text" name="zip" placeholder="Postal Code" required>
 </form>
 
 <h3>Cart:</h3>
@@ -70,34 +70,20 @@
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
   const statusEl = document.getElementById("status");
   const tbody = document.querySelector("#cartTable tbody");
   const grandTotalEl = document.getElementById("grandTotal");
   const payButton = document.getElementById("payButton");
 
-  // --- 1️⃣ Fetch your StoreCollect catalog dynamically ---
-  let cart = [];
-  try {
-    const res = await fetch("/api/products"); // endpoint returning product catalog
-    const products = await res.json();
+  // ✅ Default test cart
+  const cart = [
+    { title: "Test Red T-Shirt", price: 250.00, qty: 1, variantId: 101 },
+    { title: "Test Blue Hoodie", price: 450.00, qty: 1, variantId: 102 },
+    { title: "Test Black Cap", price: 150.00, qty: 1, variantId: 103 }
+  ];
 
-    // Example: filter selected products, add quantity, and variantId
-    cart = products.map(p => ({
-      title: p.title,
-      price: p.price,
-      qty: 1,             // default qty
-      variantId: p.variantId
-    }));
-
-  } catch (err) {
-    console.error("Failed to load products:", err);
-    statusEl.textContent = "Failed to load cart. Refresh page.";
-    statusEl.className = "error";
-    return;
-  }
-
-  // --- 2️⃣ Display cart ---
+  // Display cart
   let total = 0;
   tbody.innerHTML = "";
   cart.forEach(item => {
@@ -110,8 +96,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const yoco = new window.YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
 
-  // --- 3️⃣ Handle payment ---
-  payButton.addEventListener("click", async () => {
+  payButton.addEventListener("click", () => {
     const form = document.getElementById("checkoutForm");
     const country = form.country.value;
     const province = form.province.value;
@@ -121,7 +106,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       statusEl.className = "error";
       return;
     }
-
     if (country === "South Africa" && !province) {
       statusEl.textContent = "Please select your province.";
       statusEl.className = "error";
@@ -140,60 +124,25 @@ document.addEventListener("DOMContentLoaded", async () => {
       currency: "ZAR",
       name: "StoreCollect",
       description: "Checkout Payment",
-      callback: async (result) => {
+      callback: (result) => {
         if (result.error || !result.id) {
           statusEl.textContent = "Payment failed: " + (result.error?.message || "No token returned");
           statusEl.className = "error";
           return;
         }
 
-        try {
-          const payload = {
-            token: result.id,
-            amountInCents,
-            currency: "ZAR",
-            items: cart.map(i => ({
-              title: i.title,
-              quantity: i.qty,
-              price: i.price.toFixed(2),
-              variantId: i.variantId
-            })),
-            firstName: form.firstName.value,
-            lastName: form.lastName.value,
-            email: form.email.value,
-            phone: form.phone.value,
-            address: form.address1.value,
-            city: form.city.value,
-            province: province || "",
-            zip: form.zip.value
-          };
-
-          console.log("Sending to webhook:", payload);
-
-          const webhookRes = await fetch("/api/yoco-webhook", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
-
-          const data = await webhookRes.json();
-          if (!webhookRes.ok) {
-            statusEl.textContent = "Order failed: " + JSON.stringify(data);
-            statusEl.className = "error";
-          } else {
-            statusEl.textContent = "Payment successful! Redirecting...";
-            statusEl.className = "success";
-            window.location.href = `/thankyou.html`;
-          }
-
-        } catch (err) {
-          statusEl.textContent = "Order error: " + err.message;
-          statusEl.className = "error";
-        }
-      }
-    });
-  });
-});
-</script>
-</body>
+        // 🔹 Log payload for testing
+        const payload = {
+          token: result.id,
+          amountInCents,
+          currency: "ZAR",
+          items: cart.map(i => ({
+            title: i.title,
+            quantity: i.qty,
+            price: i.price.toFixed(2),
+            variantId: i.variantId
+          })),
+          firstName: form.firstName.value,
+          lastName: form.lastName.value,
+          email: form.email
                                             </html>
