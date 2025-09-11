@@ -70,16 +70,36 @@
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const statusEl = document.getElementById("status");
   const tbody = document.querySelector("#cartTable tbody");
   const grandTotalEl = document.getElementById("grandTotal");
   const payButton = document.getElementById("payButton");
 
-  // Example cart items
-  const cart = [{ title: "T-Shirt", price: 150, qty: 1 }];
+  // --- 1️⃣ Fetch your StoreCollect catalog dynamically ---
+  let cart = [];
+  try {
+    const res = await fetch("/api/products"); // endpoint returning product catalog
+    const products = await res.json();
 
+    // Example: filter selected products, add quantity, and variantId
+    cart = products.map(p => ({
+      title: p.title,
+      price: p.price,
+      qty: 1,             // default qty
+      variantId: p.variantId
+    }));
+
+  } catch (err) {
+    console.error("Failed to load products:", err);
+    statusEl.textContent = "Failed to load cart. Refresh page.";
+    statusEl.className = "error";
+    return;
+  }
+
+  // --- 2️⃣ Display cart ---
   let total = 0;
+  tbody.innerHTML = "";
   cart.forEach(item => {
     const row = document.createElement("tr");
     row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${item.price}</td>`;
@@ -90,6 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const yoco = new window.YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
 
+  // --- 3️⃣ Handle payment ---
   payButton.addEventListener("click", async () => {
     const form = document.getElementById("checkoutForm");
     const country = form.country.value;
@@ -109,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const SHIPPING_COST = 100;
     const totalRands = total + SHIPPING_COST;
-    const amountInCents = Math.round(totalRands * 100); // ✅ multiply by 100
+    const amountInCents = Math.round(totalRands * 100);
 
     statusEl.textContent = "Processing payment...";
     statusEl.className = "info";
@@ -126,13 +147,17 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
-        // Send to webhook
         try {
           const payload = {
             token: result.id,
             amountInCents,
             currency: "ZAR",
-            items: cart,
+            items: cart.map(i => ({
+              title: i.title,
+              quantity: i.qty,
+              price: i.price.toFixed(2),
+              variantId: i.variantId
+            })),
             firstName: form.firstName.value,
             lastName: form.lastName.value,
             email: form.email.value,
@@ -143,7 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
             zip: form.zip.value
           };
 
-          console.log("Sending to webhook:", payload); // Debug log
+          console.log("Sending to webhook:", payload);
 
           const webhookRes = await fetch("/api/yoco-webhook", {
             method: "POST",
@@ -158,9 +183,9 @@ document.addEventListener("DOMContentLoaded", () => {
           } else {
             statusEl.textContent = "Payment successful! Redirecting...";
             statusEl.className = "success";
-            // redirect to thank you page
             window.location.href = `/thankyou.html`;
           }
+
         } catch (err) {
           statusEl.textContent = "Order error: " + err.message;
           statusEl.className = "error";
@@ -170,6 +195,5 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 </script>
-
 </body>
-  </html>
+                                            </html>
