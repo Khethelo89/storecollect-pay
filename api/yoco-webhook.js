@@ -1,5 +1,7 @@
-// /api/webhook.js
-export default async function handler(req, res) {
+// /api/yoco-webhook.js
+const fetch = require("node-fetch");
+
+module.exports = async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method Not Allowed" });
 
   try {
@@ -44,7 +46,12 @@ export default async function handler(req, res) {
     const SHIPPING_COST = 100;
     const orderData = {
       order: {
-        line_items: items.map(i => ({ title: i.title, variant_id: i.variantId, quantity: i.quantity, price: i.price })),
+        line_items: items.map(i => ({
+          title: i.title,
+          variant_id: i.variantId,
+          quantity: i.quantity,
+          price: i.price
+        })),
         shipping_lines: [{ price: SHIPPING_COST.toFixed(2), title: "Shipping" }],
         customer: { first_name: firstName, last_name: lastName, email, phone },
         shipping_address: { address1: address, city, province, zip, country: "South Africa", phone },
@@ -80,4 +87,4 @@ export default async function handler(req, res) {
     console.error("Webhook error:", err);
     return res.status(500).json({ error: err.message });
   }
-}
+};
