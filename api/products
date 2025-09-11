@@ -2,17 +2,13 @@
 module.exports = function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method Not Allowed" });
 
-  try {
-    const products = [
-      { title: "T-Shirt", price: 150, variantId: 1234567890 },
-      { title: "Hoodie", price: 300, variantId: 1234567891 },
-      { title: "Cap", price: 100, variantId: 1234567892 }
-    ];
+  const products = [
+    {
+      title: "Test T-Shirt",
+      price: 150,       // Price in Rands
+      variantId: 1234567890  // Dummy Shopify variant ID
+    }
+  ];
 
-    return res.status(200).json(products);
-
-  } catch (err) {
-    console.error("Products API error:", err);
-    return res.status(500).json({ error: err.message });
-  }
+  return res.status(200).json(products);
 };
