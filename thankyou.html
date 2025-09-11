@@ -1,66 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Thank You - StoreCollect</title>
-  <style>
-    body { font-family: Arial; background:#f3f3f3; text-align:center; padding:50px; }
-    .container { background:white; padding:30px; border-radius:12px; max-width:600px; margin:auto; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
-    table { width:100%; border-collapse: collapse; margin:20px 0; }
-    th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
-    h1 { color: green; }
-    a { display:inline-block; margin-top:20px; padding:10px 20px; background:black; color:white; text-decoration:none; border-radius:8px; }
-    a:hover { background:#333; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thank You - StoreCollect</title>
+<style>
+body { font-family: Arial, sans-serif; text-align:center; background:#f3f3f3; padding:50px; }
+.container { max-width:600px; margin:auto; background:white; padding:30px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+h1 { color:#333; }
+h2 { color:#28a745; }
+p { font-size:16px; color:#555; }
+#orderSummary { margin-top:20px; text-align:left; padding:15px; border:1px solid #ccc; border-radius:8px; background:#f9f9f9;}
+#orderSummary ul { list-style:none; padding:0; }
+#orderSummary li { margin:5px 0; }
+button { margin-top:20px; padding:12px 20px; font-size:16px; border:none; border-radius:8px; background:black; color:white; cursor:pointer; }
+button:hover { background:#333; }
+</style>
 </head>
 <body>
 
 <div class="container">
-  <h1>🎉 Thank You!</h1>
-  <p id="customerInfo"></p>
+  <h1>Thank You for Your Order!</h1>
+  <h2>Free Shipping Applied ✅</h2>
+  <p id="greeting"></p>
 
-  <h3>Order Details:</h3>
-  <table>
-    <thead>
-      <tr><th>Product</th><th>Qty</th><th>Price</th></tr>
-    </thead>
-    <tbody id="orderTable"></tbody>
-  </table>
-  <h3>Total: R<span id="totalAmount">0</span></h3>
+  <div id="orderSummary">
+    <h3>Order Summary:</h3>
+    <ul id="productList"></ul>
+    <p><strong>Total Paid:</strong> R<span id="totalAmount"></span></p>
+  </div>
 
-  <a href="https://storecollect.net">Back to StoreCollect</a>
+  <button onclick="window.location.href='/'">Back to Store</button>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const params = new URLSearchParams(window.location.search);
+function getQueryParams() {
+  const params = {};
+  window.location.search.substring(1).split("&").forEach(pair => {
+    const [key, value] = pair.split("=");
+    params[decodeURIComponent(key)] = decodeURIComponent(value || "");
+  });
+  return params;
+}
 
-  // Customer info
-  const firstName = params.get("firstName") || "";
-  const lastName = params.get("lastName") || "";
-  const email = params.get("email") || "";
-  document.getElementById("customerInfo").textContent = `Customer: ${firstName} ${lastName} | Email: ${email}`;
+const params = getQueryParams();
+const name = params.name || "Customer";
+const total = params.total || "0.00";
 
-  // Order info
-  const titles = params.getAll("title");
-  const prices = params.getAll("price");
-  const qtys = params.getAll("qty");
+// Example: pass product list as JSON in query (optional)
+const products = params.products ? JSON.parse(params.products) : [
+  { title: "T-Shirt", qty: 1 },
+  { title: "Hat", qty: 2 }
+];
 
-  const tbody = document.getElementById("orderTable");
-  let total = 0;
+document.getElementById("greeting").textContent = `Hi ${name}, your payment was successful!`;
+const productListEl = document.getElementById("productList");
 
-  for (let i = 0; i < titles.length; i++) {
-    const tr = document.createElement("tr");
-    const price = parseFloat(prices[i] || 0);
-    const qty = parseInt(qtys[i] || 1);
-    tr.innerHTML = `<td>${decodeURIComponent(titles[i])}</td><td>${qty}</td><td>R${price}</td>`;
-    tbody.appendChild(tr);
-    total += price * qty;
-  }
-
-  document.getElementById("totalAmount").textContent = total;
+products.forEach(p => {
+  const li = document.createElement("li");
+  li.textContent = `${p.title} x ${p.qty}`;
+  productListEl.appendChild(li);
 });
+
+document.getElementById("totalAmount").textContent = parseFloat(total).toFixed(2);
 </script>
 
 </body>
