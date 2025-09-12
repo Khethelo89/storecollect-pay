@@ -138,8 +138,12 @@ document.addEventListener("DOMContentLoaded", () => {
           } else {
             statusEl.textContent = "Payment successful! Redirecting...";
             statusEl.className = "success";
-            window.location.href = "/thankyou.html?name=${encodeURIComponent(firstName)}&price=${encodeURIComponent(item.price)}&{product=${encodeURIComponent(item.title)}&
-              $total={encodeURIComponent(grandTotalEL)}";
+            const queryParams = new URLSearchParams({
+              name: form.firstName.value,
+              total: total + SHIPPING_COST,
+              cart: JSON.stringify(cart)});
+            
+            window.location.href = "/thankyou.html?"+ queryParams.toString();
           }
         } catch (err) {
           statusEl.textContent = "Order error: " + err.message;
