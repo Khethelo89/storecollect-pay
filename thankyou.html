@@ -44,15 +44,16 @@ function getQueryParams() {
 }
 
 const params = getQueryParams();
-const name = params.name || "Customer";
-const total = parseFloat(params.total || 0).toFixed(2);
-const products = params.products ? JSON.parse(params.products) : [];
+const name = params.firstName || "Customer";
+const price = parrams.get("Price");
+const product = params.get("Product")
+  const total = params.get("total");
 
-document.getElementById("greeting").textContent = `Hi ${name}, your payment was successful!`;
+document.getElementById("greeting").textContent = `Hi ${firstName}, your payment was successful!`;
 
 const productListEl = document.getElementById("productList");
-if (products.length) {
-  products.forEach(p => {
+if (product.length) {
+  product.forEach(p => {
     const li = document.createElement("li");
     li.textContent = `${p.title} x ${p.qty}`;
     productListEl.appendChild(li);
