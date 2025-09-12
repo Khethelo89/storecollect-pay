@@ -65,15 +65,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const grandTotalEl = document.getElementById("grandTotal");
   const payButton = document.getElementById("payButton");
 
-  const cart = [{ title: "T-Shirt", price: 150, qty: 1 }];
-  let total = 0;
+  const cart = [{ title: "T-Shirt", price: 150, qty: 1 },
+                {title:"Hat",price: 80,qty: 1 },
+                {title:"Shoes",price: 500,qty: 1}];
+  let subtotal = 0;
   cart.forEach(item => {
     const row = document.createElement("tr");
     row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${item.price}</td>`;
     tbody.appendChild(row);
-    total += item.price * item.qty;
+    subtotal += item.price * item.qty;
   });
-  grandTotalEl.textContent = total + 100;
+  const SHIPPING_COST = 100;
+  const total = subtotal + SHIPPING_COST;
+  grandTotalEl.textContent = total;
 
   const yoco = new window.YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
 
@@ -90,8 +94,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const SHIPPING_COST = 100;
-    const amountInCents = Math.round((total + SHIPPING_COST) * 100);
+    
+    const amountInCents = Math.round((total) * 100);
 
     statusEl.textContent = "Processing payment...";
     statusEl.className = "info";
@@ -140,7 +144,7 @@ document.addEventListener("DOMContentLoaded", () => {
             statusEl.className = "success";
             const queryParams = new URLSearchParams({
               name: form.firstName.value,
-              total: total + SHIPPING_COST,
+              total: total,
               cart: JSON.stringify(cart)});
             
             window.location.href = "/thankyou.html?"+ queryParams.toString();
