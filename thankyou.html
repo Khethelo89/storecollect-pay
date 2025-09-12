@@ -3,66 +3,48 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Thank You - StoreCollect</title>
+<title>StoreCollect Thank You</title>
 <style>
-body { font-family: Arial, sans-serif; text-align:center; background:#f3f3f3; padding:50px; }
-.container { max-width:600px; margin:auto; background:white; padding:30px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
-h1 { color:#333; }
-h2 { color:#28a745; }
-p { font-size:16px; color:#555; }
-#orderSummary { margin-top:20px; text-align:left; padding:15px; border:1px solid #ccc; border-radius:8px; background:#f9f9f9;}
-#orderSummary ul { list-style:none; padding:0; }
-#orderSummary li { margin:5px 0; }
-button { margin-top:20px; padding:12px 20px; font-size:16px; border:none; border-radius:8px; background:black; color:white; cursor:pointer; }
-button:hover { background:#333; }
+  body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; }
+  .container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+  table { width:100%; border-collapse: collapse; margin-bottom:20px; }
+  th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
+  h2, h3 { margin-bottom:12px; }
 </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>Thank You for Your Order!</h1>
-  <h2>Free Shipping Applied ✅</h2>
-  <p id="greeting"></p>
+  <h2>Thank you, <span id="customerName"></span>!</h2>
+  <p>Your order has been successfully placed.</p>
 
-  <div id="orderSummary">
-    <h3>Order Summary:</h3>
-    <ul id="productList"></ul>
-    <p><strong>Total Paid:</strong> R<span id="totalAmount"></span></p>
-  </div>
+  <h3>Your Order:</h3>
+  <table id="cartTable">
+    <thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead>
+    <tbody></tbody>
+  </table>
 
-  <button onclick="window.location.href='/'">Back to Store</button>
+  <h3>Total: R<span id="grandTotal"></span></h3>
 </div>
 
 <script>
-function getQueryParams() {
-  const params = {};
-  window.location.search.substring(1).split("&").forEach(pair => {
-    const [key, value] = pair.split("=");
-    params[decodeURIComponent(key)] = decodeURIComponent(value || "");
+document.addEventListener("DOMContentLoaded", () => {
+  const params = new URLSearchParams(window.location.search);
+
+  const name = params.get("name") || "Customer";
+  const total = params.get("total") || "0";
+  const cart = JSON.parse(params.get("cart") || "[]");
+
+  document.getElementById("customerName").textContent = name;
+  document.getElementById("grandTotal").textContent = total;
+
+  const tbody = document.querySelector("#cartTable tbody");
+  cart.forEach(item => {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${item.price}</td>`;
+    tbody.appendChild(row);
   });
-  return params;
-}
-
-const params = getQueryParams();
-const name = params.firstName || "Customer";
-const price = parrams.get("Price");
-const product = params.get("Product")
-  const total = params.get("total");
-
-document.getElementById("greeting").textContent = `Hi ${firstName}, your payment was successful!`;
-
-const productListEl = document.getElementById("productList");
-if (product.length) {
-  product.forEach(p => {
-    const li = document.createElement("li");
-    li.textContent = `${p.title} x ${p.qty}`;
-    productListEl.appendChild(li);
-  });
-} else {
-  productListEl.innerHTML = "<li>No products found</li>";
-}
-
-document.getElementById("totalAmount").textContent = total;
+});
 </script>
 
 </body>
