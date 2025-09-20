@@ -65,9 +65,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const grandTotalEl = document.getElementById("grandTotal");
   const payButton = document.getElementById("payButton");
 
-  const cart = [{ title: "T-Shirt", price: 150, qty: 1 },
-                {title:"Hat",price: 80,qty: 1 },
-                {title:"Shoes",price: 500,qty: 1}];
+  const params = new URLSearchParams(window.location.search);
+const cart = [];
+for (let i = 0; ; i++) {
+  if (!params.has(`title${i}`)) break;
+  cart.push({
+    title: params.get(`title${i}`),
+    price: parseFloat(params.get(`price${i}`)),
+    qty: parseInt(params.get(`quantity${i}`)),
+    variantId: params.get(`variantId${i}`)
+  });
+}
   let subtotal = 0;
   cart.forEach(item => {
     const row = document.createElement("tr");
