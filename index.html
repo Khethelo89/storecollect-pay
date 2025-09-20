@@ -80,7 +80,7 @@ for (let i = 0; ; i++) {
   cart.forEach(item => {
     const lineTotal = item.price * item.qty
     const row = document.createElement("tr");
-    row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${item.total_price}</td><td>R${lineTotal}</td>`;
+    row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${item.price}</td><td>R${lineTotal}</td>`;
     tbody.appendChild(row);
     subtotal += lineTotal;
   });
