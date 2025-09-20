@@ -71,17 +71,18 @@ for (let i = 0; ; i++) {
   if (!params.has(`title${i}`)) break;
   cart.push({
     title: params.get(`title${i}`),
-    price: parseFloat(params.get(`total_price${i}`)),
+    price: parseFloat(params.get(`price${i}`)),
     qty: parseInt(params.get(`quantity${i}`)),
     variantId: params.get(`variantId${i}`)
   });
 }
   let subtotal = 0;
   cart.forEach(item => {
+    const lineTotal = item.price * item.qty
     const row = document.createElement("tr");
-    row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${item.total_price}</td>`;
+    row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${item.total_price}</td><td>R${lineTotal}</td>`;
     tbody.appendChild(row);
-    subtotal += item.price * item.qty;
+    subtotal += lineTotal;
   });
   const SHIPPING_COST = 100;
   const total = subtotal + SHIPPING_COST;
