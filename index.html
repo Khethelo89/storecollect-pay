@@ -71,7 +71,7 @@ for (let i = 0; ; i++) {
   if (!params.has(`title${i}`)) break;
   cart.push({
     title: params.get(`title${i}`),
-    price: parseFloat(params.get(`price${i}`)),
+    price: parseFloat(params.get(`total_price${i}`)),
     qty: parseInt(params.get(`quantity${i}`)),
     variantId: params.get(`variantId${i}`)
   });
@@ -79,7 +79,7 @@ for (let i = 0; ; i++) {
   let subtotal = 0;
   cart.forEach(item => {
     const row = document.createElement("tr");
-    row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${item.price}</td>`;
+    row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${item.total_price}</td>`;
     tbody.appendChild(row);
     subtotal += item.price * item.qty;
   });
