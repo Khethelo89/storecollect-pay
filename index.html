@@ -74,15 +74,25 @@ for (let i = 0; ; i++) {
     price: parseFloat(params.get(`price${i}`)),
     qty: parseInt(params.get(`qty${i}`)),
     variantId: params.get(`variantId${i}`)
-  })
-    else if (cart.length === 0 && params.has("title")) {
+  });
+for (let i = 0; params.has(`title${i}`); i++) {
+  cart.push({
+    title: params.get(`title${i}`),
+    price: parseFloat(params.get(`price${i}`)),
+    qty: parseInt(params.get(`qty${i}`)),
+    variantId: params.get(`variantId${i}`)
+  });
+}
+
+// Case 2: Buy Now — single product without index numbers
+if (cart.length === 0 && params.has("title")) {
   cart.push({
     title: params.get("title"),
     price: parseFloat(params.get("price")),
     qty: parseInt(params.get("qty")) || 1,
     variantId: params.get("variantId")
   });
-
+}
 }
   let subtotal = 0;
   cart.forEach(item => {
