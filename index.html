@@ -78,7 +78,7 @@ for (let i = 0;params.has(`title${i}`); i++) {
 }
   let subtotal = 0;
   cart.forEach(item => {
-    const tprice = round(item.price * 18.,2)
+    const tprice = round(item.price * 18,2)
     const lineTotal = tprice * item.qty
     const row = document.createElement("tr");
     row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${(tprice)}</td><td>R${lineTotal}</td>`;
