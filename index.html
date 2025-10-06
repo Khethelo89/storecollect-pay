@@ -74,15 +74,14 @@ for (let i = 0; ; i++) {
     price: parseFloat(params.get(`price${i}`)),
     qty: parseInt(params.get(`qty${i}`)),
     variantId: params.get(`variantId${i}`)
-  });
- if (cart.length === 0 && params.has("title")) {
+  })
+    else if (cart.length === 0 && params.has("title")) {
   cart.push({
     title: params.get("title"),
     price: parseFloat(params.get("price")),
     qty: parseInt(params.get("qty")) || 1,
     variantId: params.get("variantId")
-  }); 
-  
+  });
 
 }
   let subtotal = 0;
