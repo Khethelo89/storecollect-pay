@@ -67,6 +67,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const params = new URLSearchParams(window.location.search);
 const cart = [];
+const title = params.get('title');
+  
 for (let i = 0;params.has(`title${i}`); i++) {
   if (!params.has(`title${i}`)) break;
   cart.push({
