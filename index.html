@@ -68,12 +68,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const params = new URLSearchParams(window.location.search);
 const cart = [];
 for (let i = 0;params.has(`title${i}`); i++) {
-  if (!params.has(title${i})) break;
+  if (!params.has(`title${i}`)) break;
   cart.push({
-    title: params.get(title${i}),
-    price: parseFloat(params.get(price${i})),
-    qty: parseInt(params.get(qty${i})),
-    variantId: params.get(variantId${i})
+    title: params.get(`title${i}`),
+    price: parseFloat(params.get(`price${i}`)),
+    qty: parseInt(params.get(`qty${i}`)),
+    variantId: params.get(`variantId${i}`)
   });
 }
   let subtotal = 0;
