@@ -68,30 +68,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const params = new URLSearchParams(window.location.search);
 const cart = [];
   
-  // Check if multiple items are in the URL (title0, title1...)
-  if (params.has('title0')) {
-    for (let i = 0; params.has(`title${i}`); i++) {
-      cart.push({
-        title: params.get(`title${i}`),
-        price: parseFloat(params.get(`price${i}`)),
-        qty: parseInt(params.get(`qty${i}`)),
-        variantId: params.get(`variantId${i}`)
-      });
-    }
-  } 
-  // Else check for single product parameters
-  else if (params.has('title')) {
-    cart.push({
-      title: params.get('title'),
-      price: parseFloat(params.get('price')),
-      qty: parseInt(params.get('qty')),
-      variantId: params.get('variantId')
-    });
-  }
-
-  // If cart is empty, exit
-  if (cart.length === 0) return;
-
+ for (let i = 0;params.has(`title${i}`); i++) {
+  if (!params.has(`title${i}`)) break;
+  cart.push({
+    title: params.get(`title${i}`),
+    price: parseFloat(params.get(`price${i}`)),
+    qty: parseInt(params.get(`qty${i}`)),
+    variantId: params.get(`variantId${i}`)
+  });
   
 
 }
