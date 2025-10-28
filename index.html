@@ -62,13 +62,25 @@ th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
 </table>
 
 <h3>Total: R<span id="grandTotal">0</span></h3>
-
+<h4> Choose Packaging Option</h4>
+  break;
+  <form id = "orderform">
+  <lable>
+    <input type = "radio" name="packaging" value="60">
+     Premuim Quality Packaging : R60
+    <input type ="radio" name="packaging" value = "35">
+    Normal Quality Packaging : R35
+  </label>
+  </form>
+    
+  </lable>
 <button id="payButton">Pay Now</button>
 <div id="status" class="info">Fill the form and click "Pay Now".</div>
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+  const packagingOptions = document.querySelectorAll('input[name="packaging"]');
   const statusEl = document.getElementById("status");
   const tbody = document.querySelector("#cartTable tbody");
   const grandTotalEl = document.getElementById("grandTotal");
@@ -108,13 +120,13 @@ if(cart.length === 0)
     tbody.appendChild(row);
     subtotal += lineTotal;
   });
-  const SHIPPING_COST = 100;
-  const total = subtotal + SHIPPING_COST;
+  const total = subtotal + packagingOptions;
   grandTotalEl.textContent = total;
 
   const yoco = new window.YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
 
   payButton.addEventListener("click", async () => {
+    const selected = document.querySelector('input[name="packaging"]:checked');
     const form = document.getElementById("checkoutForm");
     if (!form.firstName.value || !form.lastName.value || !form.email.value || !form.address1.value || !form.city.value || !form.zip.value) {
       statusEl.textContent = "Please fill all required fields.";
@@ -126,7 +138,9 @@ if(cart.length === 0)
       statusEl.className = "error";
       return;
     }
-
+    if(!selected){ async.preventDefault();
+                  alert('Please select a packaging option before proceeding.');
+                 }
     
     const amountInCents = Math.round((total) * 100);
 
