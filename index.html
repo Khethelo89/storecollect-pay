@@ -142,7 +142,8 @@ if(cart.length === 0)
                   alert('Please select a packaging option before proceeding.');
                  }
     
-    const amountInCents = Math.round((total) * 100);
+    const amountInCents = (Math.round((total) * 100)).toFixed(2);
+    
 
     statusEl.textContent = "Processing payment...";
     statusEl.className = "info";
