@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>StoreCollect Checkout </title>
+<title>StoreCollect Checkout</title>
 <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
 <style>
 body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; }
@@ -17,42 +17,35 @@ button:hover { background:#333; }
 .info { background: #fff3cd; color: #856404; }
 table { width:100%; border-collapse: collapse; margin-bottom:20px; }
 th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
-  #image{
-        height:130px;
-        width:120px;
-  }
-  #title4{
-      text-align: center;
-      color: #3f51b5;
-  }
+#image{ height:130px; width:120px; }
+#title4{ text-align:center; color:#3f51b5; }
 </style>
 </head>
 <body>
 
 <div class="container">
-<h2 id ="title4"> <img id = "image"  src="Logo.png"> StoreCollect Checkout  </h2>
-
+<h2 id="title4"><img id="image" src="Logo.png"> StoreCollect Checkout</h2>
 
 <form id="checkoutForm">
-<input type="text" name="firstName" placeholder="First Name" required>
-<input type="text" name="lastName" placeholder="Last Name" required>
-<input type="email" name="email" placeholder="Email" required>
-<input type="text" name="phone" placeholder="Phone">
-<input type="text" name="address1" placeholder="Address" required>
-<input type="text" name="city" placeholder="City" required>
-<select name="province" id="province" required>
-  <option value="">Select Province</option>
-  <option value="Gauteng">Gauteng</option>
-  <option value="KwaZulu-Natal">KwaZulu-Natal</option>
-  <option value="Western Cape">Western Cape</option>
-  <option value="Eastern Cape">Eastern Cape</option>
-  <option value="Free State">Free State</option>
-  <option value="Mpumalanga">Mpumalanga</option>
-  <option value="Limpopo">Limpopo</option>
-  <option value="North West">North West</option>
-  <option value="Northern Cape">Northern Cape</option>
-</select>
-<input type="text" name="zip" placeholder="Postal Code" required>
+  <input type="text" name="firstName" placeholder="First Name" required>
+  <input type="text" name="lastName" placeholder="Last Name" required>
+  <input type="email" name="email" placeholder="Email" required>
+  <input type="text" name="phone" placeholder="Phone">
+  <input type="text" name="address1" placeholder="Address" required>
+  <input type="text" name="city" placeholder="City" required>
+  <select name="province" id="province" required>
+    <option value="">Select Province</option>
+    <option value="Gauteng">Gauteng</option>
+    <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+    <option value="Western Cape">Western Cape</option>
+    <option value="Eastern Cape">Eastern Cape</option>
+    <option value="Free State">Free State</option>
+    <option value="Mpumalanga">Mpumalanga</option>
+    <option value="Limpopo">Limpopo</option>
+    <option value="North West">North West</option>
+    <option value="Northern Cape">Northern Cape</option>
+  </select>
+  <input type="text" name="zip" placeholder="Postal Code" required>
 </form>
 
 <h3>Cart:</h3>
@@ -61,19 +54,14 @@ th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
 <tbody></tbody>
 </table>
 
-<h3>Total: R<span id="grandTotal">0</span></h3>
-<h4> Choose Packaging Option</h4>
-  break;
-  <form id = "orderform">
-  <lable>
-    <input type = "radio" name="packaging" value="60">
-     Premuim Quality Packaging : R60
-    <input type ="radio" name="packaging" value = "35">
-    Normal Quality Packaging : R35
-  </label>
-  </form>
-    
-  </lable>
+<h3>Total: R<span id="grandTotal">0.00</span></h3>
+
+<h4>Choose Packaging Option <span style="color:red">*</span></h4>
+<form id="orderForm">
+  <label><input type="radio" name="packaging" value="60" required> Premium Quality Packaging — R60.00</label><br>
+  <label><input type="radio" name="packaging" value="35" required> Normal Quality Packaging — R35.00</label>
+</form>
+
 <button id="payButton">Pay Now</button>
 <div id="status" class="info">Fill the form and click "Pay Now".</div>
 </div>
@@ -87,63 +75,76 @@ document.addEventListener("DOMContentLoaded", () => {
   const payButton = document.getElementById("payButton");
 
   const params = new URLSearchParams(window.location.search);
-const cart = [];
- if(params.has('title0')){ 
- for (let i = 0;params.has(`title${i}`); i++)
- {
-  cart.push({
-    title: params.get(`title${i}`),
-    price: parseFloat(params.get(`price${i}`)),
-    qty: parseInt(params.get(`qty${i}`)),
-    variantId: params.get(`variantId${i}`)
-  });
- }
- }
-  else if (params.has('title')){
+  const cart = [];
+
+  if (params.has('title0')) { 
+    for (let i = 0; params.has(`title${i}`); i++) {
+      cart.push({
+        title: params.get(`title${i}`),
+        price: parseFloat(params.get(`price${i}`)),
+        qty: parseInt(params.get(`qty${i}`)),
+        variantId: params.get(`variantId${i}`)
+      });
+    }
+  } else if (params.has('title')) {
     cart.push({
       title: params.get('title'),
       price: parseFloat(params.get('price')),
       qty: parseInt(params.get('qty')),
-      varaintid: params.get('variantId')
+      variantId: params.get('variantId')
     });
   }
-  
-if(cart.length === 0) 
-  return;
-  
+
+  if (cart.length === 0) return;
+
   let subtotal = 0;
   cart.forEach(item => {
-    const tprice = item.price * 17.20
-    const lineTotal = tprice * item.qty
+    const tprice = item.price * 17.20;
+    const lineTotal = tprice * item.qty;
     const row = document.createElement("tr");
-    row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${(tprice)}</td><td>R${lineTotal}</td>`;
+    row.innerHTML = `<td>${item.title}</td>
+                     <td>${item.qty}</td>
+                     <td>R${tprice.toFixed(2)}</td>
+                     <td>R${lineTotal.toFixed(2)}</td>`;
     tbody.appendChild(row);
     subtotal += lineTotal;
   });
-  const total = subtotal + packagingOptions;
-  grandTotalEl.textContent = total;
+
+  let packagingCost = 0;
+  grandTotalEl.textContent = (subtotal + packagingCost).toFixed(2);
+
+  packagingOptions.forEach(option => {
+    option.addEventListener("change", () => {
+      packagingCost = parseFloat(option.value);
+      const total = subtotal + packagingCost;
+      grandTotalEl.textContent = total.toFixed(2);
+      statusEl.textContent = ""; // clear previous error if any
+      statusEl.className = "info";
+    });
+  });
 
   const yoco = new window.YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
 
   payButton.addEventListener("click", async () => {
-    const selected = document.querySelector('input[name="packaging"]:checked');
     const form = document.getElementById("checkoutForm");
-    if (!form.firstName.value || !form.lastName.value || !form.email.value || !form.address1.value || !form.city.value || !form.zip.value) {
+    const selected = document.querySelector('input[name="packaging"]:checked');
+
+    // Validate form
+    if (!form.checkValidity()) {
       statusEl.textContent = "Please fill all required fields.";
       statusEl.className = "error";
       return;
     }
-    if (!form.province.value) {
-      statusEl.textContent = "Please select your province.";
+
+    // Validate packaging (compulsory)
+    if (!selected) {
+      statusEl.textContent = "Please select a packaging option before proceeding.";
       statusEl.className = "error";
       return;
     }
-    if(!selected){ async.preventDefault();
-                  alert('Please select a packaging option before proceeding.');
-                 }
-    
-    const amountInCents = (Math.round((total) * 100)).toFixed(2);
-    
+
+    const total = subtotal + parseFloat(selected.value);
+    const amountInCents = Math.round(total * 100);
 
     statusEl.textContent = "Processing payment...";
     statusEl.className = "info";
@@ -172,7 +173,8 @@ if(cart.length === 0)
           address: form.address1.value,
           city: form.city.value,
           province: form.province.value,
-          zip: form.zip.value
+          zip: form.zip.value,
+          packaging: parseFloat(selected.value).toFixed(2)
         };
 
         console.log("Sending to webhook:", payload);
@@ -192,10 +194,10 @@ if(cart.length === 0)
             statusEl.className = "success";
             const queryParams = new URLSearchParams({
               name: form.firstName.value,
-              total: total,
-              cart: JSON.stringify(cart)});
-            
-            window.location.href = "/thankyou.html?"+ queryParams.toString();
+              total: total.toFixed(2),
+              cart: JSON.stringify(cart)
+            });
+            window.location.href = "/thankyou.html?" + queryParams.toString();
           }
         } catch (err) {
           statusEl.textContent = "Order error: " + err.message;
@@ -207,5 +209,4 @@ if(cart.length === 0)
 });
 </script>
 </body>
-</html>
-                                            </html>
+</html>                                            </html>
