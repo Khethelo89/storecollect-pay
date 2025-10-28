@@ -19,6 +19,7 @@ table { width:100%; border-collapse: collapse; margin-bottom:20px; }
 th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
 #image{ height:130px; width:120px; }
 #title4{ text-align:center; color:#3f51b5; }
+#shippingMessage { font-weight:bold; color:red; margin-bottom:10px; }
 </style>
 </head>
 <body>
@@ -55,6 +56,7 @@ th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
 </table>
 
 <h3>Total: R<span id="grandTotal">0.00</span></h3>
+<div id="shippingMessage"></div>
 
 <h4>Choose Packaging Option <span style="color:red">*</span></h4>
 <form id="orderForm">
@@ -70,6 +72,7 @@ th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
 document.addEventListener("DOMContentLoaded", () => {
   const packagingOptions = document.querySelectorAll('input[name="packaging"]');
   const statusEl = document.getElementById("status");
+  const shippingMessageEl = document.getElementById("shippingMessage");
   const tbody = document.querySelector("#cartTable tbody");
   const grandTotalEl = document.getElementById("grandTotal");
   const payButton = document.getElementById("payButton");
@@ -111,17 +114,33 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   let packagingCost = 0;
-  grandTotalEl.textContent = (subtotal + packagingCost).toFixed(2);
+  let shippingCost = 0;
+
+  function updateTotal() {
+    const province = document.getElementById("province").value;
+    
+    if (province && province !== "KwaZulu-Natal") {
+      shippingCost = 60; 
+      shippingMessageEl.textContent = "Since you are not in KwaZulu-Natal, shipping cost R60 applies.";
+    } else {
+      shippingCost = 0;
+      shippingMessageEl.textContent = "";
+    }
+
+    const total = subtotal + packagingCost + shippingCost;
+    grandTotalEl.textContent = total.toFixed(2);
+  }
 
   packagingOptions.forEach(option => {
     option.addEventListener("change", () => {
       packagingCost = parseFloat(option.value);
-      const total = subtotal + packagingCost;
-      grandTotalEl.textContent = total.toFixed(2);
-      statusEl.textContent = ""; // clear previous error if any
+      updateTotal();
+      statusEl.textContent = "";
       statusEl.className = "info";
     });
   });
+
+  document.getElementById("province").addEventListener("change", updateTotal);
 
   const yoco = new window.YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
 
@@ -129,21 +148,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("checkoutForm");
     const selected = document.querySelector('input[name="packaging"]:checked');
 
-    // Validate form
     if (!form.checkValidity()) {
       statusEl.textContent = "Please fill all required fields.";
       statusEl.className = "error";
       return;
     }
 
-    // Validate packaging (compulsory)
     if (!selected) {
       statusEl.textContent = "Please select a packaging option before proceeding.";
       statusEl.className = "error";
       return;
     }
 
-    const total = subtotal + parseFloat(selected.value);
+    const total = subtotal + parseFloat(selected.value) + shippingCost;
     const amountInCents = Math.round(total * 100);
 
     statusEl.textContent = "Processing payment...";
@@ -174,7 +191,8 @@ document.addEventListener("DOMContentLoaded", () => {
           city: form.city.value,
           province: form.province.value,
           zip: form.zip.value,
-          packaging: parseFloat(selected.value).toFixed(2)
+          packaging: parseFloat(selected.value).toFixed(2),
+          shippingCost: shippingCost.toFixed(2)
         };
 
         console.log("Sending to webhook:", payload);
@@ -209,4 +227,4 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 </body>
-</html>                                            </html>
+  </html>
