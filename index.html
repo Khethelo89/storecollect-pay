@@ -120,8 +120,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const province = document.getElementById("province").value;
     
     if (province && province !== "KwaZulu-Natal") {
-      shippingCost = 60; 
-      shippingMessageEl.textContent = "Since you are not in KwaZulu-Natal, shipping cost R60 applies.";
+      shippingCost = 120; 
+      shippingMessageEl.textContent = "Since you are not in KwaZulu-Natal, shipping cost R120 applies.";
     } else {
       shippingCost = 0;
       shippingMessageEl.textContent = "";
