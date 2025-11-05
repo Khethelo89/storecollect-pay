@@ -128,11 +128,9 @@ document.addEventListener("DOMContentLoaded", () => {
       shippingMessageEl.textContent = "Shipping cost 30";
     }
 
-  
-
     const total = subtotal + packagingCost + shippingCost;
     grandTotalEl.textContent = total.toFixed(2);
-  }
+  };
 
   packagingOptions.forEach(option => {
     option.addEventListener("change", () => {
