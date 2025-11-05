@@ -118,19 +118,16 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateTotal() {
     const province = document.getElementById("province").value;
     
-    if (province && province !== "KwaZulu-Natal")
-    {
+    if (province && province !== "KwaZulu-Natal") {
       shippingCost = 150; 
       shippingMessageEl.textContent = "Since you are not in KwaZulu-Natal, shipping cost R120 applies.";
-    } else  
-    {                                                                                                                                                                                                        {
-      shippingCost = 30;
-      shippingMessageEl.textContent = "Shipping cost 30";
+    } else  {                                                                                                                                                                                                   {
+      shippingCost = 0;
+      shippingMessageEl.textContent = "";
     }
-
     const total = subtotal + packagingCost + shippingCost;
     grandTotalEl.textContent = total.toFixed(2);
-  };
+      }
 
   packagingOptions.forEach(option => {
     option.addEventListener("change", () => {
