@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const tbody = document.querySelector("#cartTable tbody");
   cart.forEach(item => {
     const row = document.createElement("tr");
-    row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${item.price}</td>`;
+    row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${tprice.toFixed(2)}</td>`;
     tbody.appendChild(row);
   });
 });
