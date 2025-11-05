@@ -60,12 +60,13 @@ th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
 
 <h4>Choose Packaging Option <span style="color:red">*</span></h4>
 <form id="orderForm">
-  <label><input type="radio" name="packaging" value="50" required> Premium Quality Packaging — R60.00</label><br>
-  <label><input type="radio" name="packaging" value="25" required> Normal Quality Packaging — R35.00</label>
+  <label><input type="radio" name="packaging" value="60" required> Premium Quality Packaging — R60.00</label><br>
+  <label><input type="radio" name="packaging" value="35" required> Normal Quality Packaging — R35.00</label>
 </form>
 
-<button id="payButton">Pay Now</button> 
+<button id="payButton">Pay Now</button>
 <div id="status" class="info">Fill the form and click "Pay Now".</div>
+</div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
@@ -119,15 +120,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const province = document.getElementById("province").value;
     
     if (province && province !== "KwaZulu-Natal") {
-      shippingCost = 150; 
-      shippingMessageEl.textContent = "Since you are not in KwaZulu-Natal, shipping cost R120 applies.";
-    } else  {                                                                                                                                                                                                   {
+      shippingCost = 60; 
+      shippingMessageEl.textContent = "Since you are not in KwaZulu-Natal, shipping cost R60 applies.";
+    } else {
       shippingCost = 0;
       shippingMessageEl.textContent = "";
     }
+
     const total = subtotal + packagingCost + shippingCost;
     grandTotalEl.textContent = total.toFixed(2);
-      }
+  }
 
   packagingOptions.forEach(option => {
     option.addEventListener("change", () => {
@@ -140,7 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("province").addEventListener("change", updateTotal);
 
-  const yoco = new window.YocoSDK({ publicKey: "pk_live_8f7b33803ol0djKa5724" });
+  const yoco = new window.YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
 
   payButton.addEventListener("click", async () => {
     const form = document.getElementById("checkoutForm");
@@ -225,4 +227,4 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 </body>
-  </html>
+</html>
