@@ -64,7 +64,7 @@ th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
   <label><input type="radio" name="packaging" value="35" required> Normal Quality Packaging — R35.00</label>
 </form>
 
-<button id="payButton">Pay Now</button>
+<button id="payButton">Pay Now</button> 
 <div id="status" class="info">Fill the form and click "Pay Now".</div>
 </div>
 
@@ -142,7 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("province").addEventListener("change", updateTotal);
 
-  const yoco = new window.YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
+  const yoco = new window.YocoSDK({ publicKey: "pk_live_8f7b33803ol0djKa5724" });
 
   payButton.addEventListener("click", async () => {
     const form = document.getElementById("checkoutForm");
