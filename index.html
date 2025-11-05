@@ -60,8 +60,8 @@ th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
 
 <h4>Choose Packaging Option <span style="color:red">*</span></h4>
 <form id="orderForm">
-  <label><input type="radio" name="packaging" value="60" required> Premium Quality Packaging — R60.00</label><br>
-  <label><input type="radio" name="packaging" value="35" required> Normal Quality Packaging — R35.00</label>
+  <label><input type="radio" name="packaging" value="50" required> Premium Quality Packaging — R60.00</label><br>
+  <label><input type="radio" name="packaging" value="25" required> Normal Quality Packaging — R35.00</label>
 </form>
 
 <button id="payButton">Pay Now</button> 
@@ -118,13 +118,21 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateTotal() {
     const province = document.getElementById("province").value;
     
-    if (province && province !== "KwaZulu-Natal") {
-      shippingCost = 120; 
+    if (province && province !== "KwaZulu-Natal")
+    {
+      shippingCost = 150; 
       shippingMessageEl.textContent = "Since you are not in KwaZulu-Natal, shipping cost R120 applies.";
-    } else {
-      shippingCost = 0;
-      shippingMessageEl.textContent = "";
+    } else if(province == "KwaZulu-Natal" &&  City =="Pietermaritzburg") 
+    {                                                                                                                                                                                                        {
+      shippingCost = 30;
+      shippingMessageEl.textContent = "Shipping cost 30";
     }
+    else if(province == "KwaZulu-Natal" &&  City !=="Pietermaritzburg") 
+      {
+      shippingCost = 100;
+      shippingMessageEl.textContent = "Shipping cost 100";
+      }
+  
 
     const total = subtotal + packagingCost + shippingCost;
     grandTotalEl.textContent = total.toFixed(2);
