@@ -116,7 +116,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateTotal() {
     const province = document.getElementById("province").value;
-    const city = document.getElemeentById("city").trim().lowerCase();
     if (province && province !== "KwaZulu-Natal") {
       shippingCost = 100; 
       shippingMessageEl.textContent = "Since you are not in KwaZulu-Natal, shipping cost R100 applies.";
