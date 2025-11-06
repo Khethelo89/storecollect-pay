@@ -10,7 +10,7 @@
   table { width:100%; border-collapse: collapse; margin-bottom:20px; }
   th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
   h2, h3 { margin-bottom:12px; }
-  .img{ width: 500px; height: 300px; object-fit:contain; margin: 0 auto  20px auto;}
+  .img{ max-width: 500px; height: 300px; object-fit:contain; margin: 0 auto  20px auto;}
 </style>
 </head>
 <body>
@@ -23,7 +23,8 @@
     <thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead>
     <tbody></tbody>
   </table>
-
+<p><strong>Shipping Cost:</strong> R<span id = "shippingCost" ></span></p>
+<p><strong>Packaging Cost:</strong>R <span id = "packagingCost"></span></p>
   <h3>Total: R<span id="grandTotal"></span></h3>
 </div>
 
@@ -33,15 +34,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const name = params.get("name") || "Customer";
   const total = params.get("total") || "0";
   const cart = JSON.parse(params.get("cart") || "[]");
+  const shipping = params.get("shippingCost") || '0";
+  const packaging = params.get("packagingCost" || "0";
 
   document.getElementById("customerName").textContent = name;
   document.getElementById("grandTotal").textContent = total;
+  document.getElementById("shippingCost").textContent = shipping;
+  document.getElementById("packagingCost").textContent = packaging;
 
   const tbody = document.querySelector("#cartTable tbody");
   cart.forEach(item => {
     const row = document.createElement("tr");
     const tprice = item.price = item.price * 17.36;
-    row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${tprice.toFixed(2)}</td>`;
+    row.innerHTML = `<td>${item.title}</td><td>${item.qty}<td>R${tprice.toFixed(2)}</td>`;
     tbody.appendChild(row);
   });
 });
