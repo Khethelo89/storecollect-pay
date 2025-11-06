@@ -123,17 +123,15 @@ document.addEventListener("DOMContentLoaded", () => {
     if (province && province !== "KwaZulu-Natal") {
       shippingCost = 120; 
       shippingMessageEl.textContent = "Since you are not in KwaZulu-Natal, shipping cost R120 applies.";
-    } else if (province === "KwaZulu-Natal" && city !=="pietermaritzburg") { 
-      shippingCost = 80;
-      shippingMessageEl.textContent = "Since you are in pietermaritzburg,shipping cost R80";
     }
     else {
           shippingCost = 30;
           shippingMessageEl.textContent = "Since you are in pietermaritzburg,shipping cost R30";
     }
+  }
     const total = subtotal + packagingCost + shippingCost;
     grandTotalEl.textContent = total.toFixed(2);
-  }
+  
 
   packagingOptions.forEach(option => {
     option.addEventListener("change", () => {
@@ -145,6 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("province").addEventListener("change", updateTotal);
+  document.getElementById("city").addEventListener("input",updateTotal);
 
   const yoco = new window.YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
 
