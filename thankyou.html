@@ -13,7 +13,6 @@
 </style>
 </head>
 <body>
-
 <div class="container">
   <h2>Thank you, <span id="customerName"></span>!</h2>
   <p>Your order has been successfully placed.✅</p>
@@ -30,7 +29,6 @@
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const params = new URLSearchParams(window.location.search);
-
   const name = params.get("name") || "Customer";
   const total = params.get("total") || "0";
   const cart = JSON.parse(params.get("cart") || "[]");
@@ -46,6 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 </script>
-
+</div>
+<div id = "img" ><img src = "img.jpg"></div>
 </body>
 </html>
