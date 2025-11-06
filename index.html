@@ -118,7 +118,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateTotal() {
     const province = document.getElementById("province").value;
+    
     const city = document.getElementById("city").value.trim().toLowerCase();
+    
     if (province && province !== "KwaZulu-Natal") {
       shippingCost = 120; 
       shippingMessageEl.textContent = "Since you are not in KwaZulu-Natal, shipping cost R120 applies.";
@@ -127,8 +129,8 @@ document.addEventListener("DOMContentLoaded", () => {
       shippingMessageEl.textContent = "Since you are in pietermaritzburg,shipping cost R80";
     }
     else {
-          shippingCost = 30
-          shippingMessageEl.textContent = "Since you are in pietermaritzburg,shipping cost R30"
+          shippingCost = 30;
+          shippingMessageEl.textContent = "Since you are in pietermaritzburg,shipping cost R30";
     }
   }
     const total = subtotal + packagingCost + shippingCost;
