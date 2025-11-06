@@ -128,11 +128,11 @@ document.addEventListener("DOMContentLoaded", () => {
           shippingCost = 30;
           shippingMessageEl.textContent = "Since you are in pietermaritzburg,shipping cost R30";
     }
-  }
+  
     const total = subtotal + packagingCost + shippingCost;
     grandTotalEl.textContent = total.toFixed(2);
+  }
   
-
   packagingOptions.forEach(option => {
     option.addEventListener("change", () => {
       packagingCost = parseFloat(option.value);
