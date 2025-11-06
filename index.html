@@ -124,7 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (province && province !== "KwaZulu-Natal") {
       shippingCost = 120; 
       shippingMessageEl.textContent = "Since you are not in KwaZulu-Natal, shipping cost R120 applies.";
-    } else if (province == "Kwazulu-Natal" && city !=="pietermaritzburg") { 
+    } else if (province === "Kwazulu-Natal" && city !=="pietermaritzburg") { 
       shippingCost = 80;
       shippingMessageEl.textContent = "Since you are in pietermaritzburg,shipping cost R80";
     }
