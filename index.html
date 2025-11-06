@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-0<html lang="en">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,21 +14,19 @@ b00utton:hover { background:#333; }
 #st0atus { margin-top:20px; padding:12px; border-radius:8px; font-weight:bold; word-break: break-word; }
 .suc0cess { background: #d4edda; color: #155724; }
 .erro0r { background: #f8d7da; color: #721c24; }
-.info 0{ background: #fff3cd; color: #856404; }
+.info { background: #fff3cd; color: #856404; }
 table { width:100%; border-collapse: collapse; margin-bottom:20px; }
-th, td 0{ border-bottom:1px solid #ccc; padding:8px; text-align:left; }
-#image{ 00height:130px; width:120px; }
+th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
+#image{ height:130px; width:120px; }
 #title4{ text-align:center; color:#3f51b5; }
 #shippingM0essage { font-weight:bold; color:red; margin-bottom:10px; }
-</style>0
-</head>0
-<body>0
-0
-<00div class="container">
+</style>
+</head>
+<body>
 <h20 id="title4"><img id="image" src="Logo.png"> StoreCollect Checkout</h2>
-0
+
 <form id="checkoutForm">
- 00 <input type="text" name="firstName" placeholder="First Name" required>
+ <input type="text" name="firstName" placeholder="First Name" required>
   <input type="text" name="lastName" placeholder="Last Name" required>
   <input type="email" name="email" placeholder="Email" required>
   <input type="text" name="phone" placeholder="Phone">
@@ -102,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let subtotal = 0;
   cart.forEach(item => {
-    const tprice = item.price * 17.20;
+    const tprice = item.price * 17.36;
     const lineTotal = tprice * item.qty;
     const row = document.createElement("tr");
     row.innerHTML = `<td>${item.title}</td>
@@ -118,13 +116,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateTotal() {
     const province = document.getElementById("province").value;
-    
+    const city = document.getElemeentById("city").trim().lowerCase();
     if (province && province !== "KwaZulu-Natal") {
-      shippingCost = 60; 
-      shippingMessageEl.textContent = "Since you are not in KwaZulu-Natal, shipping cost R60 applies.";
+      shippingCost = 100; 
+      shippingMessageEl.textContent = "Since you are not in KwaZulu-Natal, shipping cost R100 applies.";
     } else {
-      shippingCost = 0;
-      shippingMessageEl.textContent = "";
+      shippingCost = 30;
+      shippingMessageEl.textContent = "Since you are in KwaZulu-Natal, shipping cost R30";
     }
 
     const total = subtotal + packagingCost + shippingCost;
