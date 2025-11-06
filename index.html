@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+0<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,25 +10,25 @@ body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; 
 .container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
 input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:8px; }
 button { background:black; color:white; font-size:16px; cursor:pointer; }
-button:hover { background:#333; }
-#status { margin-top:20px; padding:12px; border-radius:8px; font-weight:bold; word-break: break-word; }
-.success { background: #d4edda; color: #155724; }
-.error { background: #f8d7da; color: #721c24; }
-.info { background: #fff3cd; color: #856404; }
+b00utton:hover { background:#333; }
+#st0atus { margin-top:20px; padding:12px; border-radius:8px; font-weight:bold; word-break: break-word; }
+.suc0cess { background: #d4edda; color: #155724; }
+.erro0r { background: #f8d7da; color: #721c24; }
+.info 0{ background: #fff3cd; color: #856404; }
 table { width:100%; border-collapse: collapse; margin-bottom:20px; }
-th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
-#image{ height:130px; width:120px; }
+th, td 0{ border-bottom:1px solid #ccc; padding:8px; text-align:left; }
+#image{ 00height:130px; width:120px; }
 #title4{ text-align:center; color:#3f51b5; }
-#shippingMessage { font-weight:bold; color:red; margin-bottom:10px; }
-</style>
-</head>
-<body>
-
-<div class="container">
-<h2 id="title4"><img id="image" src="Logo.png"> StoreCollect Checkout</h2>
-
+#shippingM0essage { font-weight:bold; color:red; margin-bottom:10px; }
+</style>0
+</head>0
+<body>0
+0
+<00div class="container">
+<h20 id="title4"><img id="image" src="Logo.png"> StoreCollect Checkout</h2>
+0
 <form id="checkoutForm">
-  <input type="text" name="firstName" placeholder="First Name" required>
+ 00 <input type="text" name="firstName" placeholder="First Name" required>
   <input type="text" name="lastName" placeholder="Last Name" required>
   <input type="email" name="email" placeholder="Email" required>
   <input type="text" name="phone" placeholder="Phone">
@@ -118,21 +118,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateTotal() {
     const province = document.getElementById("province").value;
-    const city = document.getElementById("city").value.trim().toLowerCase();
     
     if (province && province !== "KwaZulu-Natal") {
-      shippingCost = 120; 
-      shippingMessageEl.textContent = "Since you are not in KwaZulu-Natal, shipping cost R120 applies.";
+      shippingCost = 60; 
+      shippingMessageEl.textContent = "Since you are not in KwaZulu-Natal, shipping cost R60 applies.";
+    } else {
+      shippingCost = 0;
+      shippingMessageEl.textContent = "";
     }
-    else {
-          shippingCost = 30;
-          shippingMessageEl.textContent = "Since you are in pietermaritzburg,shipping cost R30";
-    }
-  
+
     const total = subtotal + packagingCost + shippingCost;
     grandTotalEl.textContent = total.toFixed(2);
   }
-  
   packagingOptions.forEach(option => {
     option.addEventListener("change", () => {
       packagingCost = parseFloat(option.value);
