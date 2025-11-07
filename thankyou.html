@@ -42,8 +42,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("customerName").textContent = name;
   document.getElementById("grandTotal").textContent = total;
-  document.getElementById("shippingCost").value = shipping;
-  document.getElementById("packagingCost").value = packaging;
+  document.getElementById("shippingCost").textContent = shipping;
+  document.getElementById("packagingCost").textContent = packaging;
 
   const tbody = document.querySelector("#cartTable tbody");
   cart.forEach(item => {
