@@ -37,8 +37,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const name = params.get("name") || "Customer";
   const total = params.get("total") || 0;
   const cart = JSON.parse(params.get("cart") || "[]");
-  const shipping = params.get("shippingCost") || 0;
-  const packaging = params.get("packagingCost") || 0;
+  const shipping = params.get("shipping") || 0;
+  const packaging = params.get("packaging") || 0;
 
   document.getElementById("customerName").textContent = name;
   document.getElementById("grandTotal").textContent = total;
