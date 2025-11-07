@@ -209,6 +209,8 @@ document.getElementById("province").addEventListener("change", updateTotal);
             const queryParams = new URLSearchParams({
               name: form.firstName.value,
               total: total.toFixed(2),
+              shipping: shippingCost,
+              packaging: packagingCost,
               cart: JSON.stringify(cart)
             });
             window.location.href = "/thankyou.html?" + queryParams.toString();
