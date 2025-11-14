@@ -91,13 +91,16 @@ if (cart.length === 0 && params.has("title")) {
 
 console.log("Cart items:", cart);
 
-  let total = 0;
-  cart.forEach(item => {
-    const row = document.createElement("tr");
-    row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${item.price}</td>`;
-    tbody.appendChild(row);
-    total += item.price * item.qty;
-  });
+ const EXCHANGE_RATE = 17.40; // USD → ZAR
+
+let total = 0;
+cart.forEach(item => {
+  const priceInRands = item.price * EXCHANGE_RATE;
+  const row = document.createElement("tr");
+  row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${(priceInRands * item.qty).toFixed(2)}</td>`;
+  tbody.appendChild(row);
+  total += priceInRands * item.qty;
+});
 
   const SHIPPING_COST = 100;
   grandTotalEl.textContent = total + SHIPPING_COST;
