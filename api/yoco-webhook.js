@@ -1,114 +1,58 @@
 // /api/yoco-webhook.js
+import fetch from "node-fetch";
+
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "Method Not Allowed" });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
 
   try {
-    const {
-      token,
-      currency = "ZAR",
-      items,
-      firstName,
-      lastName,
-      email,
-      phone,
-      address,
-      city,
-      province,
-      zip,
-      shippingCost = 0,
-      packagingCost = 0
-    } = req.body;
+    const { line_items, shipping_cost, packaging_cost, customer } = req.body;
 
-    if (!token || !items?.length) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
+    // Calculate total amount in cents
+    let subtotal = line_items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
+    const totalAmount = subtotal + shipping_cost + packaging_cost;
 
-    if (!province) {
-      return res.status(400).json({ error: "Province is required for South Africa" });
-    }
-
-    // --- 1️⃣ Calculate total amount in cents ---
-    const lineTotal = items.reduce((sum, i) => sum + Number(i.price) * Number(i.qty), 0);
-    const totalAmount = lineTotal + Number(shippingCost) + Number(packagingCost);
-    const amountInCents = Math.round(totalAmount * 100); // Yoco expects cents
-
-    // --- 2️⃣ Charge Yoco ---
-    const yocoRes = await fetch("https://online.yoco.com/v1/charges/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Auth-Secret-Key": process.env.YOCO_SECRET_KEY
+    // Build payload for Yoco Checkout API
+    const checkoutPayload = {
+      amountInCents: totalAmount,
+      currency: "ZAR",
+      // You can optionally pass metadata or line items
+      items: line_items.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        priceInCents: item.unit_price
+      })),
+      customer: {
+        firstName: customer.first_name,
+        lastName: customer.last_name,
+        email: customer.email,
+        phone: customer.phone
       },
-      body: JSON.stringify({ token, amountInCents, currency })
-    });
-
-    const yocoData = await yocoRes.json();
-
-    if (!yocoRes.ok || yocoData.status !== "successful") {
-      return res.status(400).json({ error: "Yoco payment failed", details: yocoData });
-    }
-
-    // --- 3️⃣ Build Shopify order ---
-    const orderData = {
-      order: {
-        line_items: items.map(i => ({
-          title: i.title,
-          variant_id: i.variantId || null,
-          quantity: i.qty,
-          price: i.price
-        })),
-        shipping_lines: [{ price: Number(shippingCost).toFixed(2), title: "Shipping" }],
-        customer: {
-          first_name: firstName,
-          last_name: lastName,
-          email,
-          phone
-        },
-        shipping_address: {
-          address1: address,
-          city,
-          province,
-          zip,
-          country: "South Africa",
-          phone
-        },
-        financial_status: "paid",
-        transactions: [{
-          kind: "sale",
-          status: "success",
-          gateway: "Yoco",
-          authorization: yocoData.id,
-          amount: totalAmount.toFixed(2)
-        }]
-      }
+      redirectUrl: "https://storecollect.net/thank-you.html" // Redirect after successful payment
     };
 
-    // --- 4️⃣ Send order to Shopify ---
-    const shopifyResRaw = await fetch(
-      "https://b007a7-f0.myshopify.com/admin/api/2025-01/orders.json",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Shopify-Access-Token": process.env.SHOPIFY_ACCESS_TOKEN
-        },
-        body: JSON.stringify(orderData)
-      }
-    );
+    // Call Yoco Checkout API
+    const yocoRes = await fetch("https://api.yoco.com/v1/checkout", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.YOCO_SECRET_KEY}`, // Your secret key
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(checkoutPayload)
+    });
 
-    const shopifyText = await shopifyResRaw.text();
-    try {
-      const shopifyRes = JSON.parse(shopifyText);
-      if (!shopifyResRaw.ok) {
-        return res.status(500).json({ error: "Shopify API failed", details: shopifyRes });
-      }
-      return res.status(200).json({ success: true, yoco: yocoData, shopify: shopifyRes });
-    } catch (err) {
-      return res.status(500).json({ error: "Shopify did not return valid JSON", rawResponse: shopifyText });
+    const data = await yocoRes.json();
+
+    if (data.id && data.checkoutUrl) {
+      // Return checkout URL to frontend
+      res.status(200).json({ checkoutUrl: data.checkoutUrl });
+    } else {
+      res.status(400).json({ error: "Failed to create checkout session", details: data });
     }
 
   } catch (err) {
-    console.error("Webhook error:", err);
-    return res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: err.message });
   }
-                                }
+}
