@@ -5,8 +5,7 @@ export default async function handler(req, res) {
   try {
     const {
       token,
-      amountInCents,
-      currency,
+      currency = "ZAR",
       items,
       firstName,
       lastName,
@@ -15,10 +14,12 @@ export default async function handler(req, res) {
       address,
       city,
       province,
-      zip
+      zip,
+      shippingCost = 0,
+      packagingCost = 0
     } = req.body;
 
-    if (!token || !amountInCents || !items?.length) {
+    if (!token || !items?.length) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -26,7 +27,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Province is required for South Africa" });
     }
 
-    // --- 1️⃣ Charge Yoco ---
+    // --- 1️⃣ Calculate total amount in cents ---
+    const lineTotal = items.reduce((sum, i) => sum + Number(i.price) * Number(i.qty), 0);
+    const totalAmount = lineTotal + Number(shippingCost) + Number(packagingCost);
+    const amountInCents = Math.round(totalAmount * 100); // Yoco expects cents
+
+    // --- 2️⃣ Charge Yoco ---
     const yocoRes = await fetch("https://online.yoco.com/v1/charges/", {
       method: "POST",
       headers: {
@@ -42,11 +48,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Yoco payment failed", details: yocoData });
     }
 
-    // --- 2️⃣ Build Shopify order ---
-    const SHIPPING_COST = 100;
-    const lineTotal = items.reduce((sum, i) => sum + Number(i.price) * Number(i.qty), 0);
-    const totalAmount = lineTotal + SHIPPING_COST;
-
+    // --- 3️⃣ Build Shopify order ---
     const orderData = {
       order: {
         line_items: items.map(i => ({
@@ -55,7 +57,7 @@ export default async function handler(req, res) {
           quantity: i.qty,
           price: i.price
         })),
-        shipping_lines: [{ price: SHIPPING_COST.toFixed(2), title: "Shipping" }],
+        shipping_lines: [{ price: Number(shippingCost).toFixed(2), title: "Shipping" }],
         customer: {
           first_name: firstName,
           last_name: lastName,
@@ -81,7 +83,7 @@ export default async function handler(req, res) {
       }
     };
 
-    // --- 3️⃣ Send order to Shopify ---
+    // --- 4️⃣ Send order to Shopify ---
     const shopifyResRaw = await fetch(
       "https://b007a7-f0.myshopify.com/admin/api/2025-01/orders.json",
       {
@@ -109,4 +111,4 @@ export default async function handler(req, res) {
     console.error("Webhook error:", err);
     return res.status(500).json({ error: err.message });
   }
-}
+                                }
