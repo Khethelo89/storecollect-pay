@@ -1,11 +1,12 @@
+// /api/yoco-webhook.js
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
   try {
-    // DEBUG: Check if secret key is available
-    const secretKey = process.env.YOCO_SECRET_KEY;
+    // Load and trim secret key
+    const secretKey = process.env.YOCO_SECRET_KEY?.trim();
     if (!secretKey) {
       console.error("Secret key missing!");
       return res.status(500).json({ error: "YOCO_SECRET_KEY not set" });
@@ -23,6 +24,7 @@ export default async function handler(req, res) {
     let subtotal = line_items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
     const totalAmount = subtotal + (shipping_cost || 0) + (packaging_cost || 0);
 
+    // Build payload for Yoco Checkout API
     const checkoutPayload = {
       amountInCents: totalAmount,
       currency: "ZAR",
@@ -42,7 +44,10 @@ export default async function handler(req, res) {
 
     console.log("Sending payload to Yoco:", checkoutPayload);
 
-    const yocoRes = await fetch("https://api.yoco.com/v1/checkout", {
+    const endpoint = "https://api.yoco.com/v1/checkout"; // Correct endpoint for sandbox & live
+    console.log("Calling Yoco API with endpoint:", endpoint);
+
+    const yocoRes = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${secretKey}`,
@@ -58,7 +63,7 @@ export default async function handler(req, res) {
       data = await yocoRes.json();
     } else {
       const text = await yocoRes.text();
-      console.error("Yoco returned non-JSON:", text);
+      console.error("Yoco returned non-JSON response:", text);
       return res.status(500).json({ error: "Yoco returned invalid response", details: text });
     }
 
@@ -74,4 +79,4 @@ export default async function handler(req, res) {
     console.error("Webhook error:", err);
     res.status(500).json({ error: "Server error", details: err.message });
   }
-      }
+                                     }
