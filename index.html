@@ -181,7 +181,7 @@ document.getElementById("checkoutForm").addEventListener("submit", async (e) => 
 
   try {
     // Call your server webhook to create a checkout session
-    const res = await fetch("https://storecollect-pay.vercel.app/api/yoco-validate.js", {
+    const res = await fetch("https://storecollect-pay.vercel.app/api/yoco-validate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
