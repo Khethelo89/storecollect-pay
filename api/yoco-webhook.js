@@ -1,19 +1,16 @@
 export default async function handler(req, res) {
-  // Only allow POST requests
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
   try {
     const payload = req.body;
-
-    // --- Log payload for debugging (optional in production) ---
     console.log("🔥 Incoming payload:", payload);
 
     // --- Check secret key ---
     const secretKey = process.env.YOCO_SECRET_KEY?.trim();
     if (!secretKey) {
-      console.error("❌ YOCO_SECRET_KEY is missing in environment variables!");
+      console.error("❌ Missing YOCO_SECRET_KEY");
       return res.status(500).json({ error: "Server misconfigured: missing secret key" });
     }
 
@@ -26,12 +23,12 @@ export default async function handler(req, res) {
     const packaging = payload.packaging_cost || 0;
     const totalAmount = itemsTotal + shipping + packaging;
 
-    // --- Create a Yoco Hosted Checkout Session ---
-    const yocoRes = await fetch("https://online.yoco.com/v1/checkouts", {
+    // --- Create Yoco Hosted Checkout Session ---
+    const yocoRes = await fetch("https://api.yoco.com/v1/checkouts", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Auth-Secret-Key": secretKey
+        "Authorization": `Bearer ${secretKey}`
       },
       body: JSON.stringify({
         amount: totalAmount,
@@ -44,11 +41,21 @@ export default async function handler(req, res) {
       })
     });
 
-    const data = await yocoRes.json();
+    // --- Handle response safely ---
+    const text = await yocoRes.text(); // read as text first
+    let data;
+    try {
+      data = JSON.parse(text); // try to parse JSON
+    } catch {
+      console.error("❌ Yoco returned non-JSON response:", text);
+      return res.status(500).json({
+        error: "Yoco did not return JSON",
+        details: text
+      });
+    }
 
     console.log("🔍 Yoco Response:", data);
 
-    // --- Handle failed checkout creation ---
     if (!yocoRes.ok || !data.checkout_url) {
       console.error("❌ Failed to create Yoco checkout session:", data);
       return res.status(400).json({
