@@ -4,38 +4,30 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StoreCollect Checkout</title>
-<script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
 <style>
-body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; }
-.container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
-input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:8px; }
-button { background:black; color:white; font-size:16px; cursor:pointer; }
-button:hover { background:#333; }
-.quantity-btn { padding:4px 8px; margin:0 4px; cursor:pointer; }
-.remove-btn { padding:4px 8px; background:red; color:white; border:none; cursor:pointer; border-radius:4px; }
-#status { margin-top:20px; padding:12px; border-radius:8px; font-weight:bold; word-break: break-word; }
-.success { background: #d4edda; color: #155724; }
-.error { background: #f8d7da; color: #721c24; }
-.info { background: #fff3cd; color: #856404; }
-table { width:100%; border-collapse: collapse; margin-bottom:20px; }
-th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
-#image{ height:130px; width:120px; }
-#title4{ text-align:center; color:#3f51b5; }
-#shippingMessage { font-weight:bold; color:red; margin-bottom:10px; }
+  body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; }
+  .container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+  input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:8px; }
+  button { background:black; color:white; font-size:16px; cursor:pointer; }
+  button:hover { background:#333; }
+  #status { margin-top:20px; padding:12px; border-radius:8px; font-weight:bold; word-break: break-word; }
+  .success { background: #d4edda; color: #155724; }
+  .error { background: #f8d7da; color: #721c24; }
+  .info { background: #fff3cd; color: #856404; }
 </style>
 </head>
 <body>
 <div class="container">
-<h2 id="title4"><img id="image" src="Logo.png"> StoreCollect Checkout</h2>
+<h2>StoreCollect Checkout</h2>
 
 <form id="checkoutForm">
-  <input type="text" name="firstName" id="firstName" placeholder="First Name" required>
-  <input type="text" name="lastName" id="lastName" placeholder="Last Name" required>
-  <input type="email" name="email" id="email" placeholder="Email" required>
-  <input type="text" name="phone" id="phone" placeholder="Phone">
-  <input type="text" name="address1" id="address1" placeholder="Address" required>
-  <input type="text" name="city" id="city" placeholder="City" required>
-  <select name="province" id="province" required>
+  <input type="text" id="firstName" placeholder="First Name" required>
+  <input type="text" id="lastName" placeholder="Last Name" required>
+  <input type="email" id="email" placeholder="Email" required>
+  <input type="text" id="phone" placeholder="Phone">
+  <input type="text" id="address1" placeholder="Address" required>
+  <input type="text" id="city" placeholder="City" required>
+  <select id="province" required>
     <option value="">Select Province</option>
     <option value="Gauteng">Gauteng</option>
     <option value="KwaZulu-Natal">KwaZulu-Natal</option>
@@ -47,46 +39,37 @@ th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
     <option value="North West">North West</option>
     <option value="Northern Cape">Northern Cape</option>
   </select>
-  <input type="text" name="zip" id="zip" placeholder="Postal Code" required>
+  <input type="text" id="zip" placeholder="Postal Code" required>
 
-  <h3>Cart:</h3>
+  <h3>Cart</h3>
   <table id="cartTable">
-    <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Line Total</th><th>Remove</th></tr></thead>
+    <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th><th>Remove</th></tr></thead>
     <tbody></tbody>
   </table>
 
+  <div>
+    <h4>Packaging Option</h4>
+    <label><input type="radio" name="packaging" value="10" required> Premium Packaging R10</label><br>
+    <label><input type="radio" name="packaging" value="0"> Standard Packaging R0</label>
+  </div>
+
   <h3>Total: R<span id="grandTotal">0.00</span></h3>
-  <div id="shippingMessage"></div>
-
-  <h4>Choose Packaging Option <span style="color:red">*</span></h4>
-  <label><input type="radio" name="packaging" value="10" required> Premium Quality Packaging — R10.00</label><br>
-  <label><input type="radio" name="packaging" value="0"> Standard Packaging — R0.00</label><br><br>
-
   <button type="submit">Pay Now</button>
 </form>
 
 <div id="status" class="info">Fill your details and click "Pay Now"</div>
 
-
 <script>
-const yoco = new YocoSDK({
-  publicKey: "pk_test_a3abafa43ol0djK02ad4" //Replace with your Yoco public key
-});
-
-// Cart example
 let cart = [
   { title: "Clear Glasses", qty: 1, price: 150 },
   { title: "Mini Hair Fan", qty: 2, price: 80 }
 ];
 
-// Shipping cost logic
 function getShippingCost(province) {
   if (!province) return 0;
-  if (province === "KwaZulu-Natal") return 50;
-  return 120;
+  return province === "KwaZulu-Natal" ? 50 : 120;
 }
 
-// Render cart with quantity controls and remove buttons
 function renderCart() {
   const tbody = document.querySelector("#cartTable tbody");
   tbody.innerHTML = "";
@@ -97,76 +80,41 @@ function renderCart() {
     subtotal += lineTotal;
     tbody.innerHTML += `<tr>
       <td>${item.title}</td>
-      <td>
-        <button type="button" class="quantity-btn" onclick="changeQty(${index}, -1)">-</button>
-        ${item.qty}
-        <button type="button" class="quantity-btn" onclick="changeQty(${index}, 1)">+</button>
-      </td>
-      <td>R${item.price.toFixed(2)}</td>
-      <td>R${lineTotal.toFixed(2)}</td>
-      <td><button type="button" class="remove-btn" onclick="removeItem(${index})">X</button></td>
+      <td>${item.qty}</td>
+      <td>R${item.price}</td>
+      <td>R${lineTotal}</td>
+      <td><button type="button" onclick="removeItem(${index})">X</button></td>
     </tr>`;
   });
 
   const province = document.getElementById("province").value;
   const shipping = getShippingCost(province);
-  const packagingOption = document.querySelector('input[name="packaging"]:checked');
-  const packagingCost = packagingOption ? Number(packagingOption.value) : 0;
+  const packaging = Number(document.querySelector('input[name="packaging"]:checked')?.value || 0);
+  const total = subtotal + shipping + packaging;
 
-  const total = subtotal + shipping + packagingCost;
   document.getElementById("grandTotal").innerText = total.toFixed(2);
-
-  document.getElementById("shippingMessage").innerText = shipping > 0 ? `Shipping: R${shipping}` : "";
 }
 
-// Change quantity function
-function changeQty(index, delta) {
-  cart[index].qty = Math.max(1, cart[index].qty + delta);
-  renderCart();
-}
-
-// Remove item function
 function removeItem(index) {
   cart.splice(index, 1);
   renderCart();
 }
 
-// Recalculate totals on province or packaging change
 document.getElementById("province").addEventListener("change", renderCart);
-document.querySelectorAll('input[name="packaging"]').forEach(radio => {
-  radio.addEventListener("change", renderCart);
-});
+document.querySelectorAll('input[name="packaging"]').forEach(r => r.addEventListener("change", renderCart));
 
 renderCart();
 
-// Handle checkout with proper Checkout API flow
 document.getElementById("checkoutForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const statusEl = document.getElementById("status");
-  statusEl.innerText = "Processing payment...";
-  statusEl.className = "info";
+  const status = document.getElementById("status");
+  status.innerText = "Creating checkout...";
+  status.className = "info";
 
-  if (cart.length === 0) {
-    statusEl.innerText = "Your cart is empty!";
-    statusEl.className = "error";
-    return;
-  }
-
-  const packagingCost = Number(document.querySelector('input[name="packaging"]:checked').value);
-  const shippingCost = getShippingCost(document.getElementById("province").value);
-
-  // Build line items for API
-  const lineItems = cart.map(item => ({
-    name: item.title,
-    quantity: item.qty,
-    unit_price: item.price * 100 // in cents
-  }));
-
-  // Prepare payload for server-side checkout session
   const payload = {
-    line_items: lineItems,
-    shipping_cost: shippingCost * 100,
-    packaging_cost: packagingCost * 100,
+    line_items: cart.map(item => ({ name: item.title, quantity: item.qty, unit_price: item.price * 100 })),
+    shipping_cost: getShippingCost(document.getElementById("province").value) * 100,
+    packaging_cost: Number(document.querySelector('input[name="packaging"]:checked')?.value || 0) * 100,
     customer: {
       first_name: document.getElementById("firstName").value,
       last_name: document.getElementById("lastName").value,
@@ -180,26 +128,24 @@ document.getElementById("checkoutForm").addEventListener("submit", async (e) => 
   };
 
   try {
-    // Call your server webhook to create a checkout session
-    const res = await fetch("https://storecollect-pay.vercel.app/api/yoco-webhook", {
+    const res = await fetch("/api/yoco-webhook", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-
     const data = await res.json();
-
     if (data.checkoutUrl) {
-      // Redirect user to the hosted checkout page
+      status.innerText = "Redirecting to Yoco...";
       window.location.href = data.checkoutUrl;
     } else {
-      statusEl.innerText = "Payment setup failed: " + JSON.stringify(data);
-      statusEl.className = "error";
+      status.innerText = "Error: " + JSON.stringify(data);
+      status.className = "error";
     }
-
   } catch (err) {
-    statusEl.innerText = "Error: " + err.message;
-    statusEl.className = "error";
+    status.innerText = "Error: " + err.message;
+    status.className = "error";
   }
 });
 </script>
+</body>
+</html>
