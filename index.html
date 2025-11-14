@@ -67,6 +67,7 @@ th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
 
 <div id="status" class="info">Fill your details and click "Pay Now"</div>
 
+
 <script>
 const yoco = new YocoSDK({
   publicKey: "pk_test_a3abafa43ol0djK02ad4" // Replace with your Yoco public key
@@ -138,52 +139,67 @@ document.querySelectorAll('input[name="packaging"]').forEach(radio => {
 
 renderCart();
 
-// Handle checkout
+// Handle checkout with proper Checkout API flow
 document.getElementById("checkoutForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const statusEl = document.getElementById("status");
   statusEl.innerText = "Processing payment...";
   statusEl.className = "info";
 
+  if (cart.length === 0) {
+    statusEl.innerText = "Your cart is empty!";
+    statusEl.className = "error";
+    return;
+  }
+
   const packagingCost = Number(document.querySelector('input[name="packaging"]:checked').value);
   const shippingCost = getShippingCost(document.getElementById("province").value);
 
+  // Build line items for API
+  const lineItems = cart.map(item => ({
+    name: item.title,
+    quantity: item.qty,
+    unit_price: item.price * 100 // in cents
+  }));
+
+  // Prepare payload for server-side checkout session
   const payload = {
-    firstName: document.getElementById("firstName").value,
-    lastName: document.getElementById("lastName").value,
-    email: document.getElementById("email").value,
-    phone: document.getElementById("phone").value,
-    address: document.getElementById("address1").value,
-    city: document.getElementById("city").value,
-    province: document.getElementById("province").value,
-    zip: document.getElementById("zip").value,
-    items: cart,
-    packagingCost: packagingCost,
-    shippingCost: shippingCost
+    line_items: lineItems,
+    shipping_cost: shippingCost * 100,
+    packaging_cost: packagingCost * 100,
+    customer: {
+      first_name: document.getElementById("firstName").value,
+      last_name: document.getElementById("lastName").value,
+      email: document.getElementById("email").value,
+      phone: document.getElementById("phone").value,
+      address: document.getElementById("address1").value,
+      city: document.getElementById("city").value,
+      province: document.getElementById("province").value,
+      zip: document.getElementById("zip").value
+    }
   };
 
   try {
+    // Call your server webhook to create a checkout session
     const res = await fetch("https://storecollect-pay.vercel.app/api/yoco-webhook", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
+
     const data = await res.json();
-    if (data.success) {
-      statusEl.innerText = "Payment successful! Order is being processed.";
-      statusEl.className = "success";
-      setTimeout(() => { window.location.href = "/thank-you.html"; }, 2000);
+
+    if (data.checkoutUrl) {
+      // Redirect user to the hosted checkout page
+      window.location.href = data.checkoutUrl;
     } else {
-      statusEl.innerText = "Payment failed: " + JSON.stringify(data);
+      statusEl.innerText = "Payment setup failed: " + JSON.stringify(data);
       statusEl.className = "error";
     }
+
   } catch (err) {
     statusEl.innerText = "Error: " + err.message;
     statusEl.className = "error";
   }
 });
 </script>
-
-</div>
-</body>
- </html>
