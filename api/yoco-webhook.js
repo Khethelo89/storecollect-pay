@@ -1,82 +1,78 @@
 // /api/yoco-webhook.js
+import fetch from "node-fetch";
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
   try {
-    // Load and trim secret key
+    // Load secret key from environment variable
     const secretKey = process.env.YOCO_SECRET_KEY?.trim();
     if (!secretKey) {
-      console.error("Secret key missing!");
-      return res.status(500).json({ error: "YOCO_SECRET_KEY not set" });
+      console.error("YOCO_SECRET_KEY is missing in environment variables!");
+      return res.status(500).json({ error: "Server misconfigured" });
     }
 
-    console.log("Secret key loaded (first 4 chars):", secretKey.substring(0, 4));
-
-    const { line_items, shipping_cost, packaging_cost, customer } = req.body;
+    const {
+      line_items,
+      shipping_cost = 0,
+      packaging_cost = 0,
+      customer
+    } = req.body;
 
     if (!line_items || line_items.length === 0) {
       return res.status(400).json({ error: "Cart is empty" });
     }
 
     // Calculate total amount in cents
-    let subtotal = line_items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
-    const totalAmount = subtotal + (shipping_cost || 0) + (packaging_cost || 0);
+    const itemsTotal = line_items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
+    const totalAmount = itemsTotal + shipping_cost + packaging_cost;
 
-    // Build payload for Yoco Checkout API
-    const checkoutPayload = {
+    // Build Yoco checkout payload
+    const payload = {
       amountInCents: totalAmount,
       currency: "ZAR",
-      items: line_items.map(item => ({
-        name: item.name,
-        quantity: item.quantity,
-        priceInCents: item.unit_price
-      })),
       customer: {
         firstName: customer.first_name,
         lastName: customer.last_name,
         email: customer.email,
-        phone: customer.phone
+        phone: customer.phone,
+        address: {
+          line1: customer.address,
+          city: customer.city,
+          province: customer.province,
+          postalCode: customer.zip
+        }
       },
-      redirectUrl: "https://storecollect.net/thank-you.html"
+      items: line_items.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        unitPriceInCents: item.unit_price
+      }))
     };
 
-    console.log("Sending payload to Yoco:", checkoutPayload);
-
-    const endpoint = "https://api.yoco.com/v1/checkout"; // Correct endpoint for sandbox & live
-    console.log("Calling Yoco API with endpoint:", endpoint);
-
-    const yocoRes = await fetch(endpoint, {
+    // Call Yoco API to create a hosted checkout session
+    const response = await fetch("https://api.yoco.com/v1/online-checkouts", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${secretKey}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${secretKey}`
       },
-      body: JSON.stringify(checkoutPayload)
+      body: JSON.stringify(payload)
     });
 
-    const contentType = yocoRes.headers.get("content-type") || "";
-    let data;
+    const data = await response.json();
 
-    if (contentType.includes("application/json")) {
-      data = await yocoRes.json();
+    if (response.ok && data.checkoutUrl) {
+      return res.status(200).json({ checkoutUrl: data.checkoutUrl });
     } else {
-      const text = await yocoRes.text();
-      console.error("Yoco returned non-JSON response:", text);
-      return res.status(500).json({ error: "Yoco returned invalid response", details: text });
-    }
-
-    if (data.id && data.checkoutUrl) {
-      console.log("Checkout URL created successfully:", data.checkoutUrl);
-      res.status(200).json({ checkoutUrl: data.checkoutUrl });
-    } else {
-      console.error("Yoco returned error:", data);
-      res.status(400).json({ error: "Failed to create checkout session", details: data });
+      console.error("Yoco API error:", data);
+      return res.status(500).json({ error: "Yoco checkout creation failed", details: data });
     }
 
   } catch (err) {
-    console.error("Webhook error:", err);
+    console.error("Server error:", err);
     res.status(500).json({ error: "Server error", details: err.message });
   }
-                                     }
+        }
