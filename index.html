@@ -163,7 +163,7 @@ document.getElementById("checkoutForm").addEventListener("submit", async (e) => 
   };
 
   try {
-    const res = await fetch("https://your-vercel-backend.vercel.app/api/yoco-webhook", {
+    const res = await fetch("https://storecollect-pay.vercel.app/api/yoco-webhook", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
