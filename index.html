@@ -4,147 +4,156 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StoreCollect Checkout</title>
+<script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
 <style>
-  body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; }
-  .container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
-  input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:8px; }
-  button { background:black; color:white; font-size:16px; cursor:pointer; }
-  button:hover { background:#333; }
-  #status { margin-top:20px; padding:12px; border-radius:8px; font-weight:bold; word-break: break-word; }
-  .success { background: #d4edda; color: #155724; }
-  .error { background: #f8d7da; color: #721c24; }
-  .info { background: #fff3cd; color: #856404; }
+body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; }
+.container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:8px; }
+button { background:black; color:white; font-size:16px; cursor:pointer; }
+button:hover { background:#333; }
+#status { margin-top:20px; padding:12px; border-radius:8px; font-weight:bold; word-break: break-word; }
+.success { background: #d4edda; color: #155724; }
+.error { background: #f8d7da; color: #721c24; }
+.info { background: #fff3cd; color: #856404; }
+table { width:100%; border-collapse: collapse; margin-bottom:20px; }
+th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
 </style>
 </head>
 <body>
+
 <div class="container">
 <h2>StoreCollect Checkout</h2>
 
 <form id="checkoutForm">
-  <input type="text" id="firstName" placeholder="First Name" required>
-  <input type="text" id="lastName" placeholder="Last Name" required>
-  <input type="email" id="email" placeholder="Email" required>
-  <input type="text" id="phone" placeholder="Phone">
-  <input type="text" id="address1" placeholder="Address" required>
-  <input type="text" id="city" placeholder="City" required>
-  <select id="province" required>
-    <option value="">Select Province</option>
-    <option value="Gauteng">Gauteng</option>
-    <option value="KwaZulu-Natal">KwaZulu-Natal</option>
-    <option value="Western Cape">Western Cape</option>
-    <option value="Eastern Cape">Eastern Cape</option>
-    <option value="Free State">Free State</option>
-    <option value="Mpumalanga">Mpumalanga</option>
-    <option value="Limpopo">Limpopo</option>
-    <option value="North West">North West</option>
-    <option value="Northern Cape">Northern Cape</option>
-  </select>
-  <input type="text" id="zip" placeholder="Postal Code" required>
-
-  <h3>Cart</h3>
-  <table id="cartTable">
-    <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th><th>Remove</th></tr></thead>
-    <tbody></tbody>
-  </table>
-
-  <div>
-    <h4>Packaging Option</h4>
-    <label><input type="radio" name="packaging" value="10" required> Premium Packaging R10</label><br>
-    <label><input type="radio" name="packaging" value="0"> Standard Packaging R0</label>
-  </div>
-
-  <h3>Total: R<span id="grandTotal">0.00</span></h3>
-  <button type="submit">Pay Now</button>
+<input type="text" name="firstName" placeholder="First Name" required>
+<input type="text" name="lastName" placeholder="Last Name" required>
+<input type="email" name="email" placeholder="Email" required>
+<input type="text" name="phone" placeholder="Phone">
+<input type="text" name="address1" placeholder="Address" required>
+<input type="text" name="city" placeholder="City" required>
+<select name="province" required>
+  <option value="">Select Province</option>
+  <option value="Gauteng">Gauteng</option>
+  <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+  <option value="Western Cape">Western Cape</option>
+  <option value="Eastern Cape">Eastern Cape</option>
+  <option value="Free State">Free State</option>
+  <option value="Mpumalanga">Mpumalanga</option>
+  <option value="Limpopo">Limpopo</option>
+  <option value="North West">North West</option>
+  <option value="Northern Cape">Northern Cape</option>
+</select>
+<input type="text" name="zip" placeholder="Postal Code" required>
 </form>
 
-<div id="status" class="info">Fill your details and click "Pay Now"</div>
+<h3>Cart:</h3>
+<table id="cartTable">
+<thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead>
+<tbody></tbody>
+</table>
+
+<h3>Total: R<span id="grandTotal">0</span></h3>
+
+<button id="payButton">Pay Now</button>
+<div id="status" class="info">Fill the form and click "Pay Now".</div>
+</div>
 
 <script>
-let cart = [
-  { title: "Clear Glasses", qty: 1, price: 150 },
-  { title: "Mini Hair Fan", qty: 2, price: 80 }
-];
-
-function getShippingCost(province) {
-  if (!province) return 0;
-  return province === "KwaZulu-Natal" ? 50 : 120;
-}
-
-function renderCart() {
+document.addEventListener("DOMContentLoaded", () => {
+  const statusEl = document.getElementById("status");
   const tbody = document.querySelector("#cartTable tbody");
-  tbody.innerHTML = "";
-  let subtotal = 0;
+  const grandTotalEl = document.getElementById("grandTotal");
+  const payButton = document.getElementById("payButton");
 
-  cart.forEach((item, index) => {
-    const lineTotal = item.qty * item.price;
-    subtotal += lineTotal;
-    tbody.innerHTML += `<tr>
-      <td>${item.title}</td>
-      <td>${item.qty}</td>
-      <td>R${item.price}</td>
-      <td>R${lineTotal}</td>
-      <td><button type="button" onclick="removeItem(${index})">X</button></td>
-    </tr>`;
+  // Sample cart
+  const cart = [
+    { title: "T-Shirt", price: 150, qty: 1 },
+    { title: "Hat", price: 50, qty: 2 }
+  ];
+
+  let total = 0;
+  cart.forEach(item => {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${item.price}</td>`;
+    tbody.appendChild(row);
+    total += item.price * item.qty;
   });
 
-  const province = document.getElementById("province").value;
-  const shipping = getShippingCost(province);
-  const packaging = Number(document.querySelector('input[name="packaging"]:checked')?.value || 0);
-  const total = subtotal + shipping + packaging;
+  const SHIPPING_COST = 100;
+  grandTotalEl.textContent = total + SHIPPING_COST;
 
-  document.getElementById("grandTotal").innerText = total.toFixed(2);
-}
+  const yoco = new window.YocoSDK({ publicKey: "pk_test_a3abafa43ol0djK02ad4" });
 
-function removeItem(index) {
-  cart.splice(index, 1);
-  renderCart();
-}
-
-document.getElementById("province").addEventListener("change", renderCart);
-document.querySelectorAll('input[name="packaging"]').forEach(r => r.addEventListener("change", renderCart));
-
-renderCart();
-
-document.getElementById("checkoutForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const status = document.getElementById("status");
-  status.innerText = "Creating checkout...";
-  status.className = "info";
-
-  const payload = {
-    line_items: cart.map(item => ({ name: item.title, quantity: item.qty, unit_price: item.price * 100 })),
-    shipping_cost: getShippingCost(document.getElementById("province").value) * 100,
-    packaging_cost: Number(document.querySelector('input[name="packaging"]:checked')?.value || 0) * 100,
-    customer: {
-      first_name: document.getElementById("firstName").value,
-      last_name: document.getElementById("lastName").value,
-      email: document.getElementById("email").value,
-      phone: document.getElementById("phone").value,
-      address: document.getElementById("address1").value,
-      city: document.getElementById("city").value,
-      province: document.getElementById("province").value,
-      zip: document.getElementById("zip").value
+  payButton.addEventListener("click", async () => {
+    const form = document.getElementById("checkoutForm");
+    if (!form.firstName.value || !form.lastName.value || !form.email.value || !form.address1.value || !form.city.value || !form.zip.value) {
+      statusEl.textContent = "Please fill all required fields.";
+      statusEl.className = "error";
+      return;
     }
-  };
+    if (!form.province.value) {
+      statusEl.textContent = "Please select your province.";
+      statusEl.className = "error";
+      return;
+    }
 
-  try {
-    const res = await fetch("/api/yoco-webhook", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+    const amountInCents = Math.round((total + SHIPPING_COST) * 100);
+    statusEl.textContent = "Processing payment...";
+    statusEl.className = "info";
+
+    yoco.showPopup({
+      amountInCents,
+      currency: "ZAR",
+      name: "StoreCollect",
+      description: "Checkout Payment",
+      callback: async (result) => {
+        if (!result.id) {
+          statusEl.textContent = "Payment failed: No token returned";
+          statusEl.className = "error";
+          return;
+        }
+
+        const payload = {
+          token: result.id,
+          amountInCents,
+          currency: "ZAR",
+          items: cart,
+          firstName: form.firstName.value,
+          lastName: form.lastName.value,
+          email: form.email.value,
+          phone: form.phone.value,
+          address: form.address1.value,
+          city: form.city.value,
+          province: form.province.value,
+          zip: form.zip.value
+        };
+
+        try {
+          const res = await fetch("/api/yoco-webhook", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          const data = await res.json();
+          if (!res.ok) {
+            statusEl.textContent = "Order failed: " + JSON.stringify(data);
+            statusEl.className = "error";
+          } else {
+            const totalR = ((total + SHIPPING_COST).toFixed(2));
+            const productsParam = encodeURIComponent(JSON.stringify(cart));
+            const nameParam = encodeURIComponent(form.firstName.value);
+
+            // Redirect to thankyou page with dynamic data
+            window.location.href = `/thankyou.html?name=${nameParam}&total=${totalR}&products=${productsParam}`;
+          }
+        } catch (err) {
+          statusEl.textContent = "Order error: " + err.message;
+          statusEl.className = "error";
+        }
+      }
     });
-    const data = await res.json();
-    if (data.checkoutUrl) {
-      status.innerText = "Redirecting to Yoco...";
-      window.location.href = data.checkoutUrl;
-    } else {
-      status.innerText = "Error: " + JSON.stringify(data);
-      status.className = "error";
-    }
-  } catch (err) {
-    status.innerText = "Error: " + err.message;
-    status.className = "error";
-  }
+  });
 });
 </script>
 </body>
