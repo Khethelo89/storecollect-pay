@@ -1,6 +1,4 @@
 // /api/yoco-webhook.js
-
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
@@ -65,6 +63,7 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     if (response.ok && data.checkoutUrl) {
+      
       return res.status(200).json({ checkoutUrl: data.checkoutUrl });
     } else {
       console.error("Yoco API error:", data);
