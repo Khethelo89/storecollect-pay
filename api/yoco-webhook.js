@@ -1,7 +1,7 @@
-
-
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "Method Not Allowed" });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
 
   try {
     const {
@@ -23,24 +23,57 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    if (!province) {
-      return res.status(400).json({ error: "Province is required for South Africa" });
+    const secretKey = process.env.YOCO_SECRET_KEY?.trim();
+    if (!secretKey) {
+      console.error("❌ Missing YOCO_SECRET_KEY in Vercel");
+      return res.status(500).json({ error: "Server misconfigured" });
     }
 
-    // --- 1️⃣ Charge Yoco ---
+    // --- Charge via Yoco Checkout API ---
     const yocoRes = await fetch("https://online.yoco.com/v1/charges/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Auth-Secret-Key": process.env.YOCO_SECRET_KEY
+        "X-Auth-Secret-Key": secretKey,
       },
-@@ -35,50 +39,67 @@ export default async function handler(req, res) {
+      body: JSON.stringify({
+        token,
+        amount: amountInCents,
+        currency,
+        metadata: {
+          firstName,
+          lastName,
+          email,
+          phone,
+          address,
+          city,
+          province,
+          zip
+        }
+      }),
+    });
+
     const yocoData = await yocoRes.json();
 
     if (!yocoRes.ok || yocoData.status !== "successful") {
-
-      return res.status(400).json({ error: "Yoco payment failed", details: yocoData });
+      console.error("❌ Yoco payment failed:", yocoData);
+      return res.status(400).json({
+        error: "Yoco payment failed",
+        details: yocoData,
+      });
     }
+
+    return res.status(200).json({
+      success: true,
+      transactionId: yocoData.id,
+      message: "Payment successful",
+    });
+
+  } catch (err) {
+    console.error("Server error:", err);
+    return res.status(500).json({ error: "Internal Server Error", details: err.message });
+  }
+}
 
     // --- 2️⃣ Build Shopify order ---
     const SHIPPING_COST = 100;
