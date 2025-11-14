@@ -51,7 +51,7 @@ export default async function handler(req, res) {
       order: {
         line_items: items.map(i => ({
           title: i.title,
-          variant_id: i.variantId || null, // replace with actual variantId if available
+          variant_id: i.variantId || null,
           quantity: i.qty,
           price: i.price
         })),
