@@ -128,7 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
     statusEl.className = "info";
 
     // 1️⃣ Create Yoco Checkout Session from your backend
-    const res = await fetch("/api/yoco-checkout", {
+    const res = await fetch("/api/yoco-webhook", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
