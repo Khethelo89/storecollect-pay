@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StoreCollect Checkout</title>
-
 <style>
 body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; }
 .container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
@@ -92,8 +91,8 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("Cart items:", cart);
 
   const EXCHANGE_RATE = 17.40; // USD → ZAR
-
   let total = 0;
+
   cart.forEach(item => {
     const priceInRands = item.price * EXCHANGE_RATE;
     const row = document.createElement("tr");
@@ -110,12 +109,11 @@ document.addEventListener("DOMContentLoaded", () => {
   grandTotalEl.textContent = (total + SHIPPING_COST).toFixed(2);
 
   // ---------------------------
-  // 🚀 NEW YOCO CHECKOUT API
+  // PAY BUTTON
   // ---------------------------
   payButton.addEventListener("click", async () => {
     const form = document.getElementById("checkoutForm");
 
-    // Required
     if (!form.firstName.value || !form.lastName.value || !form.email.value ||
         !form.address1.value || !form.city.value || !form.zip.value || !form.province.value) {
       statusEl.textContent = "Please fill all required fields.";
@@ -127,8 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
     statusEl.textContent = "Creating secure payment...";
     statusEl.className = "info";
 
-    // 1️⃣ Create Yoco Checkout Session from your backend
-    const res = await fetch("/api/yoco-webhook", {
+    const res = await fetch("/api/yoco-checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -141,14 +138,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const data = await res.json();
-
     if (!res.ok) {
-      statusEl.textContent = "Payment failed: " + JSON.stringify(data);
+      statusEl.textContent = "Failed to create checkout: " + JSON.stringify(data);
       statusEl.className = "error";
       return;
     }
 
-    // 2️⃣ Open popup
+    // Open Yoco Checkout popup
     openYocoPopup(data.checkoutUrl);
   });
 
