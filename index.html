@@ -166,9 +166,10 @@ cart.forEach(item => {
             const totalR = ((total + SHIPPING_COST).toFixed(2));
             const productsParam = encodeURIComponent(JSON.stringify(cart));
             const nameParam = encodeURIComponent(form.firstName.value);
+            const price = priceInRands
 
             // Redirect to thankyou page with dynamic data
-            window.location.href = `/thankyou.html?name=${nameParam}&total=${totalR}&products=${productsParam}`;
+            window.location.href = `/thankyou.html?name=${nameParam}&total=${totalR}&products=${productsParam}&Nprice=${price}`;
           }
         } catch (err) {
           statusEl.textContent = "Order error: " + err.message;
