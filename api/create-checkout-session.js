@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     const formattedLineItems = lineItems.map(item => ({
       displayName: item.name,
       quantity: item.quantity,
-      amountInCents: item.amount
+      pricingDetails: { amountInCents: item.amount}
     }));
 
     // Call Yoco Checkout API
