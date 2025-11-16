@@ -26,7 +26,6 @@
   </table>
   <div class = "container2">
 <p><strong>Shipping Cost:</strong> R<span id = "shippingCost" ></span></p>
-<p><strong>Packaging Cost:</strong> R<span id = "packagingCost"></span></p>
     </div>
   <h3>Total: R<span id="grandTotal"></span></h3>
 </div>
@@ -38,12 +37,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const total = params.get("total") || 0;
   const cart = JSON.parse(params.get("cart") || "[]");
   const shipping = params.get("shipping") || 0;
-  const packaging = params.get("packaging") || 0;
+  
 
   document.getElementById("customerName").textContent = name;
   document.getElementById("grandTotal").textContent = total;
   document.getElementById("shippingCost").textContent = shipping;
-  document.getElementById("packagingCost").textContent = packaging;
 
   const tbody = document.querySelector("#cartTable tbody");
   cart.forEach(item => {
