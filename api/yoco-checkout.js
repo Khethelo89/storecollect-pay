@@ -7,7 +7,6 @@ export default async function handler(req, res) {
   try {
     const { amountInCents, currency = "ZAR", items, name, email } = req.body;
 
-    // Validate required fields
     if (!amountInCents || !items?.length) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -15,7 +14,6 @@ export default async function handler(req, res) {
     const secretKey = process.env.YOCO_SECRET_KEY?.trim();
     if (!secretKey) return res.status(500).json({ error: "Server misconfiguration" });
 
-    // Create a new Yoco Checkout session
     const response = await fetch("https://payments.yoco.com/api/checkouts", {
       method: "POST",
       headers: {
@@ -32,10 +30,8 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
-
     if (!response.ok) return res.status(response.status).json(data);
 
-    // Return the checkout URL to the frontend
     return res.status(200).json({ checkoutUrl: data.redirect_url, checkoutId: data.id });
 
   } catch (err) {
