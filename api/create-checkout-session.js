@@ -5,13 +5,12 @@ export default async function handler(req, res) {
 
   try {
     const secretKey = process.env.YOCO_SECRET_KEY?.trim();
-
     if (!secretKey) {
       console.error("Yoco secret key missing!");
       return res.status(500).json({ error: "Missing Yoco Secret Key" });
     }
 
-    // Customer + cart sent from frontend
+    // Destructure request body
     const {
       amountInCents,
       currency,
@@ -21,7 +20,14 @@ export default async function handler(req, res) {
       cancelUrl
     } = req.body;
 
-    // Build request to Yoco Checkout API
+    // Format line items for Yoco
+    const formattedLineItems = lineItems.map(item => ({
+      displayName: item.name,
+      quantity: item.quantity,
+      amountInCents: item.amount
+    }));
+
+    // Call Yoco Checkout API
     const yoRes = await fetch("https://payments.yoco.com/api/checkouts", {
       method: "POST",
       headers: {
@@ -31,7 +37,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         amount: amountInCents,
         currency,
-        lineItems,
+        lineItems: formattedLineItems,
         successUrl,
         cancelUrl,
         customer
@@ -39,7 +45,6 @@ export default async function handler(req, res) {
     });
 
     const yoData = await yoRes.json();
-
     console.log("Yoco response:", yoData);
 
     if (!yoRes.ok) {
@@ -49,7 +54,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // Return checkout URL to frontend
     return res.status(200).json({
       checkoutUrl: yoData.checkoutUrl
     });
@@ -59,3 +63,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Server error" });
   }
 }
+
