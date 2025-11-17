@@ -58,6 +58,7 @@ th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
 </div>
 
 <script>
+<script>
 document.addEventListener("DOMContentLoaded", () => {
 
   const statusEl = document.getElementById("status");
@@ -71,8 +72,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Support multiple products from URL params
   for (let i = 0; params.has(`title${i}`); i++) {
     cart.push({
-      title: params.get(`title${i}`),
-      price: parseFloat(params.get(`price${i}`)),
+      title: params.get(`title${i}`) || "Unknown Product",
+      price: parseFloat(params.get(`price${i}`)) || 0,
       qty: parseInt(params.get(`qty${i}`)) || 1
     });
   }
@@ -80,13 +81,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // Support single product
   if (cart.length === 0 && params.has("title")) {
     cart.push({
-      title: params.get("title"),
-      price: parseFloat(params.get("price")),
+      title: params.get("title") || "Unknown Product",
+      price: parseFloat(params.get("price")) || 0,
       qty: parseInt(params.get("qty")) || 1
     });
   }
 
-  const EXCHANGE_RATE = 17.40; // USD -> ZAR if needed
+  const EXCHANGE_RATE = 17.40; // USD -> ZAR
   const SHIPPING_COST = 100;    // Flat shipping
   let total = 0;
 
@@ -104,8 +105,13 @@ document.addEventListener("DOMContentLoaded", () => {
   payButton.addEventListener("click", async () => {
     const form = document.getElementById("checkoutForm");
 
-    if (!form.firstName.value || !form.lastName.value || !form.email.value ||
-        !form.address1.value || !form.city.value || !form.zip.value || !form.province.value) {
+    // Validate required fields
+    const firstName = form.firstName.value.trim();
+    const lastName = form.lastName.value.trim();
+    const email = form.email.value.trim();
+    const phone = form.phone.value.trim();
+
+    if (!firstName || !lastName || !email || !form.address1.value.trim() || !form.city.value.trim() || !form.zip.value.trim() || !form.province.value) {
       statusEl.textContent = "Please fill all required fields.";
       statusEl.className = "error";
       return;
@@ -129,9 +135,9 @@ document.addEventListener("DOMContentLoaded", () => {
             amount: Math.round(item.price * EXCHANGE_RATE)
           })),
           customer: {
-            name: form.firstName.value + " " + form.lastName.value,
-            email: form.email.value,
-            phone: form.phone.value || ""
+            name: firstName + " " + lastName,
+            email,
+            phone: phone || ""
           },
           successUrl: "https://storecollect.net/success",
           cancelUrl: "https://storecollect.net/cancel"
@@ -139,24 +145,24 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       const data = await res.json();
+      console.log("Backend response:", data);
 
-      if (!res.ok) {
-        statusEl.textContent = "Failed to create checkout: " + JSON.stringify(data);
+      if (!res.ok || !data.checkoutUrl) {
+        statusEl.textContent = "Failed to create checkout. Response: " + JSON.stringify(data);
         statusEl.className = "error";
         return;
       }
 
-      // Redirect user to Yoco checkout
+      // Safe redirect to Yoco
       window.location.href = data.checkoutUrl;
 
     } catch (err) {
-      statusEl.textContent = "Error connecting to server: " + err.message;
+      statusEl.textContent = "Server error: " + err.message;
       statusEl.className = "error";
     }
   });
 
 });
 </script>
-
 </body>
 </html>
