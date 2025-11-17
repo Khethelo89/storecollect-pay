@@ -6,7 +6,7 @@
 <title>StoreCollect Checkout</title>
 <style>
 body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; }
-.container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+.container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
 input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:8px; }
 button { background:black; color:white; font-size:16px; cursor:pointer; }
 button:hover { background:#333; }
@@ -68,27 +68,29 @@ document.addEventListener("DOMContentLoaded", () => {
   const params = new URLSearchParams(window.location.search);
   const cart = [];
 
+  // Support multiple products from URL params
   for (let i = 0; params.has(`title${i}`); i++) {
     cart.push({
       title: params.get(`title${i}`),
       price: parseFloat(params.get(`price${i}`)),
-      qty: parseInt(params.get(`qty${i}`)),
-      variantId: params.get(`variantId${i}`)
+      qty: parseInt(params.get(`qty${i}`)) || 1
     });
   }
 
+  // Support single product
   if (cart.length === 0 && params.has("title")) {
     cart.push({
       title: params.get("title"),
       price: parseFloat(params.get("price")),
-      qty: parseInt(params.get("qty")) || 1,
-      variantId: params.get("variantId")
+      qty: parseInt(params.get("qty")) || 1
     });
   }
 
-  const EXCHANGE_RATE = 17.40;
+  const EXCHANGE_RATE = 17.40; // USD -> ZAR if needed
+  const SHIPPING_COST = 100;    // Flat shipping
   let total = 0;
 
+  // Render cart table
   cart.forEach(item => {
     const priceInRands = item.price * EXCHANGE_RATE;
     const row = document.createElement("tr");
@@ -97,7 +99,6 @@ document.addEventListener("DOMContentLoaded", () => {
     total += priceInRands * item.qty;
   });
 
-  const SHIPPING_COST = 100;
   grandTotalEl.textContent = (total + SHIPPING_COST).toFixed(2);
 
   payButton.addEventListener("click", async () => {
@@ -111,56 +112,51 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const amountInCents = Math.round((total + SHIPPING_COST) * 100);
+
     statusEl.textContent = "Creating secure payment...";
     statusEl.className = "info";
 
-    const res = await fetch("/api/yoco-checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        amountInCents,
-        currency: "ZAR",
-        items: cart,
-        name: form.firstName.value,
-        email: form.email.value
-      })
-    });
+    try {
+      const res = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amountInCents,
+          currency: "ZAR",
+          lineItems: cart.map(item => ({
+            name: item.title,
+            quantity: item.qty,
+            amount: Math.round(item.price * EXCHANGE_RATE)
+          })),
+          customer: {
+            name: form.firstName.value + " " + form.lastName.value,
+            email: form.email.value,
+            phone: form.phone.value || ""
+          },
+          successUrl: "https://storecollect.net/success",
+          cancelUrl: "https://storecollect.net/cancel"
+        })
+      });
 
-    const data = await res.json();
-    if (!res.ok) {
-      statusEl.textContent = "Failed to create checkout: " + JSON.stringify(data);
+      const data = await res.json();
+
+      if (!res.ok) {
+        statusEl.textContent = "Failed to create checkout: " + JSON.stringify(data);
+        statusEl.className = "error";
+        return;
+      }
+
+      // Redirect user to Yoco checkout
+      window.location.href = data.checkoutUrl;
+
+    } catch (err) {
+      statusEl.textContent = "Error connecting to server: " + err.message;
       statusEl.className = "error";
-      return;
     }
-
-    openYocoPopup(data.checkoutUrl);
   });
-
-  function openYocoPopup(url) {
-    const popup = document.createElement("div");
-    popup.style.position = "fixed";
-    popup.style.inset = "0";
-    popup.style.background = "rgba(0,0,0,0.7)";
-    popup.style.zIndex = "9999";
-    popup.style.display = "flex";
-    popup.style.alignItems = "center";
-    popup.style.justifyContent = "center";
-
-    popup.innerHTML = `
-      <div style="width:90%;max-width:500px;height:600px;background:#fff;border-radius:12px;overflow:hidden;position:relative;">
-        <iframe src="${url}" style="width:100%;height:100%;border:none;"></iframe>
-        <button id="closePopupBtn"
-          style="position:absolute;bottom:0;left:0;width:100%;padding:12px;background:black;color:white;border:0;cursor:pointer;">
-          Cancel Payment
-        </button>
-      </div>
-    `;
-
-    document.body.appendChild(popup);
-    document.getElementById("closePopupBtn").onclick = () => popup.remove();
-  }
 
 });
 </script>
+
 </body>
 </html>
