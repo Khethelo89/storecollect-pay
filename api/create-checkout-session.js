@@ -1,3 +1,4 @@
+// /api/create-checkout-session.js
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
@@ -10,7 +11,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Missing Yoco Secret Key" });
     }
 
-    // Destructure request body
     const {
       amountInCents,
       currency,
@@ -20,11 +20,15 @@ export default async function handler(req, res) {
       cancelUrl
     } = req.body;
 
+    if (!amountInCents || !lineItems || !Array.isArray(lineItems) || lineItems.length === 0) {
+      return res.status(400).json({ error: "Invalid request: missing amount or line items" });
+    }
+
     // Format line items for Yoco
     const formattedLineItems = lineItems.map(item => ({
-      displayName: item.name,
-      quantity: item.quantity,
-      pricingDetails: { price : item.amount}
+      displayName: item.name || "Unknown Product",
+      quantity: item.quantity || 1,
+      pricingDetails: { amountInCents: item.amount || 0 }
     }));
 
     // Call Yoco Checkout API
@@ -47,15 +51,16 @@ export default async function handler(req, res) {
     const yoData = await yoRes.json();
     console.log("Yoco response:", yoData);
 
-    if (!yoRes.ok) {
+    if (!yoRes.ok || !yoData.redirectUrl) {
       return res.status(400).json({
         error: "Yoco Checkout API Error",
         details: yoData
       });
     }
 
+    // Return a safe checkout URL to the frontend
     return res.status(200).json({
-      checkoutUrl: yoData.checkoutUrl
+      checkoutUrl: yoData.redirectUrl
     });
 
   } catch (err) {
@@ -63,4 +68,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Server error" });
   }
 }
-
