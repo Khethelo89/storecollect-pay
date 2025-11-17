@@ -1,16 +1,11 @@
 // /api/yoco-success.js
 export default async function handler(req, res) {
-  if (req.method !== "GET") {
-    return res.status(405).send("Method Not Allowed");
-  }
+  if (req.method !== "GET") return res.status(405).send("Method Not Allowed");
 
   try {
     const { checkoutId } = req.query;
-    if (!checkoutId) {
-      return res.status(400).send("Missing checkoutId");
-    }
+    if (!checkoutId) return res.status(400).send("Missing checkoutId");
 
-    // 1️⃣ Confirm payment with Yoco
     const secretKey = process.env.YOCO_SECRET_KEY?.trim();
     const yoRes = await fetch(`https://payments.yoco.com/api/checkouts/${checkoutId}`, {
       headers: { "Authorization": `Bearer ${secretKey}` }
@@ -22,8 +17,8 @@ export default async function handler(req, res) {
       return res.status(400).send("Payment not completed");
     }
 
-    // 2️⃣ Post order to Shopify
-    const shopifyWebhookUrl = process.env.SHOPIFY_WEBHOOK_URL; // set in Vercel env
+    // Post order to Shopify
+    const shopifyWebhookUrl = process.env.SHOPIFY_WEBHOOK_URL;
     await fetch(shopifyWebhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -35,8 +30,21 @@ export default async function handler(req, res) {
       })
     });
 
-    // 3️⃣ Redirect customer to your thank you page
-    res.writeHead(302, { Location: "https://storecollect.net/thank-you" });
+    // Redirect to thank-you page with query params
+    const query = new URLSearchParams({
+      name: yoData.customer?.name || "Customer",
+      total: (yoData.amount / 100).toFixed(2),
+      shipping: 100,
+      cart: JSON.stringify(
+        yoData.lineItems.map(item => ({
+          title: item.displayName,
+          qty: item.quantity,
+          price: item.pricingDetails[0]?.price / 100 || 0
+        }))
+      )
+    });
+
+    res.writeHead(302, { Location: `https://storecollect.net/thank-you?${query.toString()}` });
     res.end();
 
   } catch (err) {
@@ -44,3 +52,4 @@ export default async function handler(req, res) {
     res.status(500).send("Server error");
   }
 }
+
