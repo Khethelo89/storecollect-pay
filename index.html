@@ -67,6 +67,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const params = new URLSearchParams(window.location.search);
   const cart = [];
 
+  function getShippingCost(province, city) {
+    const cityLower = city.value;
+     const provinceLower = province.value;
+    if (provinceLower == "KwaZulu-Natal")
+      if(cityLower.includes("pietermartiztburg"){
+        return 30;
+      }
+    return 40;
+  }
+  return 120;
+}
+form.province.addEventListener("input",change);
+  form.city.addEventListner("input",change);
+
   // Multiple products from URL params
   for (let i = 0; params.has(`title${i}`); i++) {
     cart.push({
@@ -86,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const EXCHANGE_RATE = 17.40; // USD -> ZAR
-  const SHIPPING_COST = 100;
+  const SHIPPING_COST = getShippingCost(province,city);
   let total = 0;
 
   // Render cart table
