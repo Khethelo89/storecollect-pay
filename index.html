@@ -57,8 +57,10 @@ th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
 <div id="status" class="info">Fill the form and click "Pay Now".</div>
 </div>
 <script>
+<script>
 document.addEventListener("DOMContentLoaded", () => {
 
+  const form = document.getElementById("checkoutForm");
   const statusEl = document.getElementById("status");
   const tbody = document.querySelector("#cartTable tbody");
   const grandTotalEl = document.getElementById("grandTotal");
@@ -67,99 +69,96 @@ document.addEventListener("DOMContentLoaded", () => {
   const params = new URLSearchParams(window.location.search);
   const cart = [];
 
-  // SHIPPING FUNCTION
-function getShippingCost(provinceInput, cityInput) {
-  const cityLower = (cityInput.value || "").toLowerCase().trim();
-  const provinceLower = (provinceInput.value || "").trim();
+  let totalCartAmount = 0;
+  let currentShipping = 0;
 
-  if (provinceLower === "KwaZulu-Natal") {
-    // Correct spelling + PMB also checks "pmb"
-    if (
-      cityLower.includes("pietermaritzburg") || 
-      cityLower.includes("pmb")
-    ) {
-      return 30;
+  // SHIPPING FUNCTION
+  function getShippingCost(provinceInput, cityInput) {
+    const cityLower = (cityInput.value || "").toLowerCase().trim();
+    const provinceLower = (provinceInput.value || "").toLowerCase().trim();
+
+    if (provinceLower === "kwazulu-natal") {
+      if (cityLower.includes("pietermaritzburg") || cityLower.includes("pmb")) {
+        return 30;
+      }
+      return 40;
     }
-    return 40;
+
+    return 120;
   }
 
-  return 120;
-}
+  // UPDATE TOTAL FUNCTION
+  function updateTotals() {
+    let total = 0;
+
+    currentShipping = getShippingCost(form.province, form.city);
+
+    tbody.innerHTML = ""; // Clear table
+
+    cart.forEach(item => {
+      const priceInRands = item.price * EXCHANGE_RATE;
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+        <td>${item.title}</td>
+        <td>${item.qty}</td>
+        <td>R${(priceInRands * item.qty).toFixed(2)}</td>
+      `;
+
+      tbody.appendChild(row);
+      total += priceInRands * item.qty;
+    });
+
+    totalCartAmount = total + currentShipping;
+    grandTotalEl.textContent = totalCartAmount.toFixed(2);
+  }
 
 
-// UPDATE TOTAL FUNCTION
-function updateTotals() {
-  let total = 0;
-
-  // Recalculate shipping based on current inputs
-  const shipping = getShippingCost(form.province, form.city);
-
-  tbody.innerHTML = ""; // Clear existing table rows
-
-  cart.forEach(item => {
-    const priceInRands = item.price * EXCHANGE_RATE;
-    const row = document.createElement("tr");
-
-    row.innerHTML = `
-      <td>${item.title}</td>
-      <td>${item.qty}</td>
-      <td>R${(priceInRands * item.qty).toFixed(2)}</td>
-    `;
-
-    tbody.appendChild(row);
-    total += priceInRands * item.qty;
-  });
-
-  grandTotalEl.textContent = (total + shipping).toFixed(2);
-}
+  // LISTENERS
+  form.province.addEventListener("input", updateTotals);
+  form.city.addEventListener("input", updateTotals);
 
 
-// LISTENERS
-form.province.addEventListener("input", updateTotals);
-form.city.addEventListener("input", updateTotals);
+  // URL PARAM CART LOADING
+  for (let i = 0; params.has(`title${i}`); i++) {
+    cart.push({
+      title: params.get(`title${i}`),
+      price: parseFloat(params.get(`price${i}`)),
+      qty: parseInt(params.get(`qty${i}`))
+    });
+  }
+
+  if (cart.length === 0 && params.has("title")) {
+    cart.push({
+      title: params.get("title"),
+      price: parseFloat(params.get("price")),
+      qty: parseInt(params.get("qty"))
+    });
+  }
 
 
-// URL PARAM CART LOADING
-for (let i = 0; params.has(`title${i}`); i++) {
-  cart.push({
-    title: params.get(`title${i}`) || "Unknown Product",
-    price: parseFloat(params.get(`price${i}`)) || 0,
-    qty: parseInt(params.get(`qty${i}`)) || 1
-  });
-}
+  const EXCHANGE_RATE = 17.40;
 
-// SINGLE PRODUCT SUPPORT
-if (cart.length === 0 && params.has("title")) {
-  cart.push({
-    title: params.get("title") || "Unknown Product",
-    price: parseFloat(params.get("price")) || 0,
-    qty: parseInt(params.get("qty")) || 1
-  });
-}
+  // INITIAL TOTAL RENDER
+  updateTotals();
 
 
-// CONSTANTS
-const EXCHANGE_RATE = 17.40;
-
-
-// INITIAL RUN
-updateTotals();
-
+  // PAY BUTTON
   payButton.addEventListener("click", async () => {
-    const form = document.getElementById("checkoutForm");
 
     const firstName = form.firstName.value.trim();
     const lastName = form.lastName.value.trim();
     const email = form.email.value.trim();
-    const phone = form.phone.value.trim();
 
-    if (!firstName || !lastName || !email || !form.address1.value.trim() || !form.city.value.trim() || !form.zip.value.trim() || !form.province.value) {
+    if (!firstName || !lastName || !email || !form.address1.value.trim() ||
+        !form.city.value.trim() || !form.zip.value.trim() || !form.province.value) {
+
       statusEl.textContent = "Please fill all required fields.";
       statusEl.className = "error";
       return;
     }
 
-    const amountInCents = Math.round((total + SHIPPING_COST) * 100);
+    const amountInCents = Math.round(totalCartAmount * 100);
 
     statusEl.textContent = "Creating secure payment...";
     statusEl.className = "info";
@@ -179,7 +178,7 @@ updateTotals();
           customer: {
             name: firstName + " " + lastName,
             email,
-            phone: phone || ""
+            phone: form.phone.value || ""
           },
           successUrl: "https://storecollect-pay.vercel.app/api/yoco-succes",
           cancelUrl: "https://storecollect.net/cancel"
@@ -187,9 +186,7 @@ updateTotals();
       });
 
       const data = await res.json();
-      console.log("Backend response:", data);
 
-      // Use redirectUrl first, fallback to checkoutUrl
       const checkoutUrl = data.redirectUrl || data.checkoutUrl;
       if (!checkoutUrl) {
         statusEl.textContent = "Checkout URL missing! Response: " + JSON.stringify(data);
@@ -197,18 +194,17 @@ updateTotals();
         return;
       }
 
-      // Redirect user to Yoco checkout
       window.location.href = checkoutUrl;
 
     } catch (err) {
       statusEl.textContent = "Server error: " + err.message;
       statusEl.className = "error";
     }
+
   });
 
 });
 </script>
-
 
 </body>
 </html>
