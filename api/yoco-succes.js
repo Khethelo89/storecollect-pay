@@ -71,8 +71,11 @@ export default async function handler(req, res) {
       )
     });
 
-    res.writeHead(302, { Location: `https://storecollect.net/thank-you?${query.toString()}` });
-    res.end();
+// Replace with your GitHub Pages URL
+const githubThankyouUrl = `https://khethelo89.github.io/storecollect-pay/thankyou.html`;
+
+res.writeHead(302, { Location: `${githubThankyouUrl}?${query.toString()}` });
+res.end();
 
   } catch (err) {
     console.error("Yoco success error:", err);
