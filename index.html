@@ -16,6 +16,7 @@ button:hover { background:#333; }
 .info { background: #fff3cd; color: #856404; }
 table { width:100%; border-collapse: collapse; margin-bottom:20px; }
 th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
+#shippingDisplay { font-size: 16px; margin-bottom: 10px; color: #555; }
 </style>
 </head>
 <body>
@@ -51,117 +52,116 @@ th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
 <tbody></tbody>
 </table>
 
+<h3 id="shippingDisplay">Shipping: R0</h3>
+
 <h3>Total: R<span id="grandTotal">0</span></h3>
 
 <button id="payButton">Pay Now</button>
 <div id="status" class="info">Fill the form and click "Pay Now".</div>
 </div>
+
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
+  const EXCHANGE_RATE = 17.40;
   const form = document.getElementById("checkoutForm");
   const statusEl = document.getElementById("status");
   const tbody = document.querySelector("#cartTable tbody");
   const grandTotalEl = document.getElementById("grandTotal");
+  const shippingDisplayEl = document.getElementById("shippingDisplay");
   const payButton = document.getElementById("payButton");
 
   const params = new URLSearchParams(window.location.search);
   const cart = [];
-
   let totalCartAmount = 0;
   let currentShipping = 0;
 
+  // Load cart from URL (single or multiple items)
+  for (let i = 0;; i++) {
+    const title = params.get(i === 0 ? "title" : `title${i}`);
+    const price = parseFloat(params.get(i === 0 ? "price" : `price${i}`));
+    const qty = parseInt(params.get(i === 0 ? "qty" : `qty${i}`), 10);
 
-// SHIPPING FUNCTION WITH DESCRIPTION
+    if (!title) break;
+    if (!isNaN(price) && !isNaN(qty)) cart.push({ title, price, qty });
+  }
+
+  // SHIPPING FUNCTION
   function getShippingCost(provinceInput, cityInput) {
     const cityLower = (cityInput.value || "").toLowerCase().trim();
     const provinceLower = (provinceInput.value || "").toLowerCase().trim();
 
+    let cost = 0;
+    let reason = "";
+
     if (provinceLower === "kwazulu-natal") {
       if (cityLower.includes("pietermaritzburg") || cityLower.includes("pmb")) {
-        return { cost: 30, description: "Pietermaritzburg rate" };
+        cost = 30;
+        reason = "Because you are in Pietermaritzburg";
+      } else {
+        cost = 40;
+        reason = "Because you are in KwaZulu-Natal outside Pietermaritzburg";
       }
-      return { cost: 40, description: "KZN rate" };
+    } else if (provinceLower) {
+      cost = 120;
+      reason = "Because you are outside KwaZulu-Natal";
+    } else {
+      cost = 0;
+      reason = "Please select your province";
     }
 
-    return { cost: 120, description: "Outside KZN rate" };
+    console.log("Shipping cost:", cost, "| Reason:", reason);
+    return { cost, reason };
   }
 
   // UPDATE TOTAL FUNCTION
   function updateTotals() {
     let total = 0;
+    const shipping = getShippingCost(form.province, form.city);
+    currentShipping = shipping.cost;
 
-    currentShipping = getShippingCost(form.province, form.city);
-
-    tbody.innerHTML = ""; // Clear table
+    tbody.innerHTML = "";
 
     cart.forEach(item => {
       const priceInRands = item.price * EXCHANGE_RATE;
       const row = document.createElement("tr");
-
-      row.innerHTML = `
-        <td>${item.title}</td>
-        <td>${item.qty}</td>
-        <td>R${(priceInRands * item.qty).toFixed(2)}</td>
-      `;
-
+      row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${(priceInRands * item.qty).toFixed(2)}</td>`;
       tbody.appendChild(row);
       total += priceInRands * item.qty;
     });
 
     totalCartAmount = total + currentShipping;
     grandTotalEl.textContent = totalCartAmount.toFixed(2);
+
+    // Single line shipping display
+    shippingDisplayEl.textContent =
+      `Shipping: R${currentShipping.toFixed(2)} (${shipping.reason})`;
   }
 
-
-  // LISTENERS
+  // Listeners for dynamic update
   form.province.addEventListener("input", updateTotals);
   form.city.addEventListener("input", updateTotals);
 
-
-  // URL PARAM CART LOADING
-  for (let i = 0; params.has(`title${i}`); i++) {
-    cart.push({
-      title: params.get(`title${i}`),
-      price: parseFloat(params.get(`price${i}`)),
-      qty: parseInt(params.get(`qty${i}`))
-    });
-  }
-
-  if (cart.length === 0 && params.has("title")) {
-    cart.push({
-      title: params.get("title"),
-      price: parseFloat(params.get("price")),
-      qty: parseInt(params.get("qty"))
-    });
-  }
-
-
-  const EXCHANGE_RATE = 17.40;
-
-  // INITIAL TOTAL RENDER
+  // Initial render
   updateTotals();
-
 
   // PAY BUTTON
   payButton.addEventListener("click", async () => {
-
     const firstName = form.firstName.value.trim();
     const lastName = form.lastName.value.trim();
     const email = form.email.value.trim();
 
     if (!firstName || !lastName || !email || !form.address1.value.trim() ||
         !form.city.value.trim() || !form.zip.value.trim() || !form.province.value) {
-
       statusEl.textContent = "Please fill all required fields.";
       statusEl.className = "error";
       return;
     }
 
     const amountInCents = Math.round(totalCartAmount * 100);
-
     statusEl.textContent = "Creating secure payment...";
     statusEl.className = "info";
+    payButton.disabled = true;
 
     try {
       const res = await fetch("/api/create-checkout-session", {
@@ -173,7 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
           lineItems: cart.map(item => ({
             name: item.title,
             quantity: item.qty,
-            amount: Math.round(item.price * EXCHANGE_RATE)
+            amount: Math.round(item.price * EXCHANGE_RATE * 100)
           })),
           customer: {
             name: firstName + " " + lastName,
@@ -186,21 +186,21 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       const data = await res.json();
-
       const checkoutUrl = data.redirectUrl || data.checkoutUrl;
+
       if (!checkoutUrl) {
         statusEl.textContent = "Checkout URL missing! Response: " + JSON.stringify(data);
         statusEl.className = "error";
+        payButton.disabled = false;
         return;
       }
 
       window.location.href = checkoutUrl;
-
     } catch (err) {
       statusEl.textContent = "Server error: " + err.message;
       statusEl.className = "error";
+      payButton.disabled = false;
     }
-
   });
 
 });
@@ -208,4 +208,3 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </body>
 </html>
-
