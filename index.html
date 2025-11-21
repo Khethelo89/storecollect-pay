@@ -78,6 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (provinceLower === "kwazulu-natal") {
       if (cityLower.includes("pietermaritzburg") || cityLower.includes("pmb")) {
+        console.log("Shipping Cost : R30,if you are in  pmb")
         return 30;
       }
       return 40;
