@@ -71,20 +71,20 @@ document.addEventListener("DOMContentLoaded", () => {
   let totalCartAmount = 0;
   let currentShipping = 0;
 
-  // SHIPPING FUNCTION
+
+// SHIPPING FUNCTION WITH DESCRIPTION
   function getShippingCost(provinceInput, cityInput) {
     const cityLower = (cityInput.value || "").toLowerCase().trim();
     const provinceLower = (provinceInput.value || "").toLowerCase().trim();
 
     if (provinceLower === "kwazulu-natal") {
       if (cityLower.includes("pietermaritzburg") || cityLower.includes("pmb")) {
-        console.log("Shipping Cost : R30,if you are in  pmb")
-        return 30;
+        return { cost: 30, description: "Pietermaritzburg rate" };
       }
-      return 40;
+      return { cost: 40, description: "KZN rate" };
     }
 
-    return 120;
+    return { cost: 120, description: "Outside KZN rate" };
   }
 
   // UPDATE TOTAL FUNCTION
