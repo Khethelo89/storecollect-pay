@@ -188,12 +188,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await res.json();
       const checkoutUrl = data.redirectUrl || data.checkoutUrl;
 
-      if (!checkoutUrl) {
-        statusEl.textContent = "Checkout URL missing! Response: " + JSON.stringify(data);
-        statusEl.className = "error";
-        payButton.disabled = false;
-        return;
-      }
+if (!checkoutUrl) {
+  statusEl.textContent = 
+    "Checkout URL missing! Backend returned: " + JSON.stringify(data, null, 2);
+  statusEl.className = "error";
+  payButton.disabled = false;
+  return;
+}
+
 
       window.location.href = checkoutUrl;
     } catch (err) {
