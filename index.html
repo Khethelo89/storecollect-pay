@@ -67,53 +67,83 @@ document.addEventListener("DOMContentLoaded", () => {
   const params = new URLSearchParams(window.location.search);
   const cart = [];
 
-  function getShippingCost(province, city) {
-    const cityLower = city.value;
-     const provinceLower = province.value;
-    if (provinceLower == "KwaZulu-Natal"){
-      if(cityLower.includes("pietermartiztburg")){
-        return 30;
-      }
+  // SHIPPING FUNCTION
+function getShippingCost(provinceInput, cityInput) {
+  const cityLower = (cityInput.value || "").toLowerCase().trim();
+  const provinceLower = (provinceInput.value || "").trim();
+
+  if (provinceLower === "KwaZulu-Natal") {
+    // Correct spelling + PMB also checks "pmb"
+    if (
+      cityLower.includes("pietermaritzburg") || 
+      cityLower.includes("pmb")
+    ) {
+      return 30;
+    }
     return 40;
   }
+
   return 120;
 }
-form.province.addEventListener("input",change);
-  form.city.addEventListner("input",change);
 
-  // Multiple products from URL params
-  for (let i = 0; params.has(`title${i}`); i++) {
-    cart.push({
-      title: params.get(`title${i}`) || "Unknown Product",
-      price: parseFloat(params.get(`price${i}`)) || 0,
-      qty: parseInt(params.get(`qty${i}`)) || 1
-    });
-  }
 
-  // Single product support
-  if (cart.length === 0 && params.has("title")) {
-    cart.push({
-      title: params.get("title") || "Unknown Product",
-      price: parseFloat(params.get("price")) || 0,
-      qty: parseInt(params.get("qty")) || 1
-    });
-  }
-//Update totals function
-  const EXCHANGE_RATE = 17.40; // USD -> ZAR
-  const SHIPPING_COST = getShippingCost(form.province,form.city);
+// UPDATE TOTAL FUNCTION
+function updateTotals() {
   let total = 0;
-  
 
-  // Render cart table
+  // Recalculate shipping based on current inputs
+  const shipping = getShippingCost(form.province, form.city);
+
+  tbody.innerHTML = ""; // Clear existing table rows
+
   cart.forEach(item => {
     const priceInRands = item.price * EXCHANGE_RATE;
     const row = document.createElement("tr");
-    row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${(priceInRands * item.qty).toFixed(2)}</td>`;
+
+    row.innerHTML = `
+      <td>${item.title}</td>
+      <td>${item.qty}</td>
+      <td>R${(priceInRands * item.qty).toFixed(2)}</td>
+    `;
+
     tbody.appendChild(row);
     total += priceInRands * item.qty;
   });
 
-  grandTotalEl.textContent = (total + SHIPPING_COST).toFixed(2);
+  grandTotalEl.textContent = (total + shipping).toFixed(2);
+}
+
+
+// LISTENERS
+form.province.addEventListener("input", updateTotals);
+form.city.addEventListener("input", updateTotals);
+
+
+// URL PARAM CART LOADING
+for (let i = 0; params.has(`title${i}`); i++) {
+  cart.push({
+    title: params.get(`title${i}`) || "Unknown Product",
+    price: parseFloat(params.get(`price${i}`)) || 0,
+    qty: parseInt(params.get(`qty${i}`)) || 1
+  });
+}
+
+// SINGLE PRODUCT SUPPORT
+if (cart.length === 0 && params.has("title")) {
+  cart.push({
+    title: params.get("title") || "Unknown Product",
+    price: parseFloat(params.get("price")) || 0,
+    qty: parseInt(params.get("qty")) || 1
+  });
+}
+
+
+// CONSTANTS
+const EXCHANGE_RATE = 17.40;
+
+
+// INITIAL RUN
+updateTotals();
 
   payButton.addEventListener("click", async () => {
     const form = document.getElementById("checkoutForm");
