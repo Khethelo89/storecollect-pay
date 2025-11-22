@@ -22,7 +22,7 @@ export default async function handler(req, res) {
 
     if (!yoRes.ok || yoData.status !== "paid") {
       console.error("Payment not completed:", yoData);
-      return res.redirect("https://khethelo89.github.io/storecollect-pay/thankyou.html");
+      return res.redirect("https://Khethelo89.github.io/storecollect-pay/thankyou.html");
     }
 
     // 2️⃣ Optionally create Shopify order (keep your current code)
