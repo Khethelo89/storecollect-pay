@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
     const {
       amountInCents,
-      currency,
+      currency = "ZAR",
       lineItems,
       customer,
       successUrl,
@@ -28,8 +28,12 @@ export default async function handler(req, res) {
     const formattedLineItems = lineItems.map(item => ({
       displayName: item.name || "Unknown Product",
       quantity: item.quantity || 1,
-      pricingDetails: { price : item.amount || 0 }
+      pricingDetails: { price: Math.round(item.amount) || 0 }
     }));
+
+    // Ensure successUrl and cancelUrl are full URLs
+    const finalSuccessUrl = successUrl?.trim() || "https://storecollect-pay.vercel.app/api/yoco-success";
+    const finalCancelUrl = cancelUrl?.trim() || "https://storecollect-pay.vercel.app/cancel";
 
     // Call Yoco Checkout API
     const yoRes = await fetch("https://payments.yoco.com/api/checkouts", {
@@ -42,8 +46,8 @@ export default async function handler(req, res) {
         amount: amountInCents,
         currency,
         lineItems: formattedLineItems,
-        successUrl,
-        cancelUrl,
+        successUrl: finalSuccessUrl,
+        cancelUrl: finalCancelUrl,
         customer
       })
     });
@@ -58,7 +62,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // Return a safe checkout URL to the frontend
+    // Return the checkout URL to the frontend
     return res.status(200).json({
       checkoutUrl: yoData.redirectUrl
     });
