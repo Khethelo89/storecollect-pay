@@ -80,7 +80,7 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error("Yoco success error:", err);
-    return res.redirect("https://khethelo89.github.io/storecollect-pay/thankyou.html");
+    return res.redirect("https://Khethelo89.github.io/storecollect-pay/thankyou.html");
   }
 }
 
