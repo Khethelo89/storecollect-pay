@@ -1,12 +1,16 @@
+// /api/yoco-success.js
 export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).send("Method Not Allowed");
 
   const { checkoutId } = req.query;
 
-  // Fallback if checkoutId is missing
+  // Default GitHub Pages thank-you URL
+  const thankyouUrl = "https://Khethelo89.github.io/storecollect-pay/thankyou.html";
+
+  // If checkoutId is missing, redirect anyway
   if (!checkoutId) {
-    console.warn("checkoutId missing, redirecting anyway.");
-    return res.redirect("https://khethelo89.github.io/storecollect-pay/thankyou.html");
+    console.warn("checkoutId missing, redirecting to thank-you page anyway.");
+    return res.redirect(thankyouUrl);
   }
 
   try {
@@ -19,12 +23,13 @@ export default async function handler(req, res) {
     });
     const yoData = await yoRes.json();
 
+    // If payment not completed, still redirect to thank-you page
     if (!yoRes.ok || yoData.status !== "paid") {
       console.error("Payment not completed:", yoData);
-      return res.redirect("https://khethelo89.github.io/storecollect-pay/thankyou.html");
+      return res.redirect(thankyouUrl);
     }
 
-    // 2️⃣ Optionally create Shopify order
+    // 2️⃣ Optional: Post to Shopify (keep your current code if needed)
     const shopifyDomain = "b007a7-f0.myshopify.com";
     const shopifyAccessToken = process.env.SHOPIFY_ACCESS_TOKEN;
 
@@ -32,11 +37,11 @@ export default async function handler(req, res) {
       order: {
         email: yoData.customer?.email || "customer@example.com",
         financial_status: "paid",
-        total_price: ((yoData.amount || 0) / 100).toFixed(2),
-        line_items: (yoData.lineItems || []).map(item => ({
+        total_price: (yoData.amount / 100).toFixed(2),
+        line_items: yoData.lineItems.map(item => ({
           title: item.displayName,
-          quantity: item.quantity || 1,
-          price: ((item.pricingDetails?.[0]?.price || 0) / 100).toFixed(2)
+          quantity: item.quantity,
+          price: (item.pricingDetails[0]?.price / 100 || 0).toFixed(2)
         })),
         shipping_address: {
           first_name: yoData.customer?.name?.split(" ")[0] || "First",
@@ -51,7 +56,7 @@ export default async function handler(req, res) {
     };
 
     // Send to Shopify
-    await fetch(`https://${shopifyDomain}/admin/api/2025-10/orders.json`, {
+    const shopifyRes = await fetch(`https://${shopifyDomain}/admin/api/2025-10/orders.json`, {
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": shopifyAccessToken,
@@ -60,24 +65,26 @@ export default async function handler(req, res) {
       body: JSON.stringify(shopifyOrder)
     });
 
-    // 3️⃣ Redirect to thank-you page with query parameters
+    console.log("Shopify order created:", await shopifyRes.json());
+
+    // 3️⃣ Redirect to thank-you page with query params (cart, total, shipping, name)
     const query = new URLSearchParams({
       name: yoData.customer?.name || "Customer",
-      total: ((yoData.amount || 0) / 100).toFixed(2),
+      total: (yoData.amount / 100).toFixed(2),
       shipping: 100,
       cart: JSON.stringify(
-        (yoData.lineItems || []).map(item => ({
+        yoData.lineItems.map(item => ({
           title: item.displayName,
-          qty: item.quantity || 1,
-          price: ((item.pricingDetails?.[0]?.price || 0) / 100).toFixed(2)
+          qty: item.quantity,
+          price: item.pricingDetails[0]?.price / 100 || 0
         }))
       )
     });
 
-    return res.redirect(`https://khethelo89.github.io/storecollect-pay/thankyou.html?${query.toString()}`);
+    return res.redirect(`${thankyouUrl}?${query.toString()}`);
 
   } catch (err) {
     console.error("Yoco success error:", err);
-    return res.redirect("https://khethelo89.github.io/storecollect-pay/thankyou.html");
+    return res.redirect(thankyouUrl);
   }
 }
