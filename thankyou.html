@@ -11,7 +11,7 @@
   th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
   h2, h3 { margin-bottom:12px; }
   .img{ max-width: 600px; height: 200px; object-fit:contain; margin: 0 auto 20px auto;}
-  .container2{text-align: left;}
+  .container2{text-align: left; margin-bottom:10px;}
 </style>
 </head>
 <body>
@@ -24,9 +24,11 @@
     <thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead>
     <tbody></tbody>
   </table>
+
   <div class="container2">
     <p><strong>Shipping Cost:</strong> R<span id="shippingCost"></span></p>
   </div>
+
   <h3>Total: R<span id="grandTotal"></span></h3>
 </div>
 
@@ -37,27 +39,32 @@ document.addEventListener("DOMContentLoaded", () => {
   const params = new URLSearchParams(window.location.search);
 
   const name = params.get("name") || "Customer";
-  const total = params.get("total") || 0;
-  const shipping = params.get("shipping") || 0;
+  const total = parseFloat(params.get("total") || 0);
+  const shipping = parseFloat(params.get("shipping") || 0);
   const cart = JSON.parse(params.get("cart") || "[]");
 
   document.getElementById("customerName").textContent = name;
-  document.getElementById("grandTotal").textContent = total;
-  document.getElementById("shippingCost").textContent = shipping;
+  document.getElementById("shippingCost").textContent = shipping.toFixed(2);
 
   const tbody = document.querySelector("#cartTable tbody");
+  let subtotal = 0;
+
   cart.forEach(item => {
     const row = document.createElement("tr");
-    const tprice = item.price * item.qty;
+    const tprice = (item.price * item.qty) || 0;
+    subtotal += tprice;
     row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${tprice.toFixed(2)}</td>`;
     tbody.appendChild(row);
   });
 
-  // Optional: Post again to Shopify webhook for extra safety
+  const grandTotal = subtotal + shipping;
+  document.getElementById("grandTotal").textContent = grandTotal.toFixed(2);
+
+  // Optional: Post again to Shopify webhook
   fetch("/api/shopify-webhook", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ customerName: name, total, shipping, cart })
+    body: JSON.stringify({ customerName: name, subtotal, shipping, grandTotal, cart })
   })
   .then(res => res.json())
   .then(data => console.log("Shopify webhook response:", data))
@@ -66,3 +73,4 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+
