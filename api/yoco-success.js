@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   // Fallback if checkoutId is missing (manual testing or Yoco issue)
   if (!checkoutId) {
     console.warn("checkoutId missing, redirecting anyway.");
-    return res.redirect("https://khethelo89.github.io/storecollect-pay/thankyou.html");
+    return res.redirect("https://Khethelo89.github.io/storecollect-pay/thankyou.html");
   }
 
   try {
