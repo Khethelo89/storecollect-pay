@@ -76,7 +76,7 @@ export default async function handler(req, res) {
       )
     });
 
-    return res.redirect(`https://khethelo89.github.io/storecollect-pay/thankyou.html?${query.toString()}`);
+    return res.redirect(`https://Khethelo89.github.io/storecollect-pay/thankyou.html?${query.toString()}`);
 
   } catch (err) {
     console.error("Yoco success error:", err);
