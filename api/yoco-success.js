@@ -5,7 +5,7 @@ export default async function handler(req, res) {
   const { checkoutId } = req.query;
 
   // Default GitHub Pages thank-you URL
-  const thankyouUrl = "https://Khethelo89.github.io/storecollect-pay/thankyou.html";
+  const thankyouUrl = "https://storecollect-pay.vercel.app/thankyou.html";
 
   // If checkoutId is missing, redirect anyway
   if (!checkoutId) {
