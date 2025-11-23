@@ -39,7 +39,7 @@ export default async function handler(req, res) {
     const total = ((yoData.amount + (yoData.shippingInCents || 10000)) / 100).toFixed(2);
 
     // 3️⃣ Prepare Shopify order
-    const shopifyDomain = "your-shopify-store.myshopify.com";
+    const shopifyDomain = "b007a7-f0.myshopify.com";
     const shopifyAccessToken = process.env.SHOPIFY_ACCESS_TOKEN;
 
     const shopifyOrder = {
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
     };
 
     // 4️⃣ Create Shopify order
-    const shopifyRes = await fetch(`https://${shopifyDomain}/admin/api/2025-10/orders.json`, {
+    const shopifyRes = await fetch(`https://${shopifyDomain}/admin/api/2025-10/products.json`, {
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": shopifyAccessToken,
