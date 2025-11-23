@@ -126,7 +126,7 @@
 
     <table id="cartTable">
       <thead>
-        <tr><th>Product</th><th>Quantity</th><th>Price (R)</th><th>Total (R)</th></tr>
+        <tr><th>Product</th><th>Quantity</th><th>Price (R)</th>
       </thead>
       <tbody></tbody>
     </table>
@@ -157,7 +157,7 @@
   cartData.forEach(item => {
     const row = document.createElement("tr");
     const totalPrice = (item.price * item.qty).toFixed(2);
-    row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${(item.price*EXCHANGE_RATE).toFixed(2)}</td><td>R${totalPrice}</td>`;
+    row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${(item.price*EXCHANGE_RATE).toFixed(2)}</td>`;
     tbody.appendChild(row);
   });
 
