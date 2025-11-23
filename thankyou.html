@@ -6,173 +6,157 @@
 <title>Thank You - StoreCollect</title>
 <style>
   body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f0f2f5;
+    font-family: 'Arial', sans-serif;
+    background-color: #f3f3f3;
     margin: 0;
     padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
   }
 
   .container {
-    max-width: 800px;
-    margin: 50px auto;
     background-color: #fff;
-    padding: 50px 40px;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    max-width: 750px;
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     text-align: center;
   }
 
-  img.logo {
-    max-width: 180px;
-    margin-bottom: 30px;
+  .header {
+    background-color: #2a7f4e;
+    color: white;
+    padding: 30px 20px;
   }
 
-  h1 {
-    color: #2a7f4e;
-    margin-bottom: 10px;
+  .header img.logo {
+    max-width: 150px;
+    margin-bottom: 15px;
+  }
+
+  .header h1 {
+    margin: 0;
     font-size: 28px;
   }
 
-  p {
-    color: #555;
+  .header p {
+    margin: 5px 0 0;
     font-size: 16px;
-    margin: 6px 0;
+    opacity: 0.9;
   }
 
-  h2 {
-    color: #2a7f4e;
-    margin-top: 30px;
-    margin-bottom: 15px;
+  .content {
+    padding: 30px 40px;
+  }
+
+  .order-number {
     font-size: 22px;
+    font-weight: bold;
+    color: #2a7f4e;
+    margin-bottom: 20px;
   }
 
   table {
     width: 100%;
     border-collapse: collapse;
-    margin: 20px 0;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
   }
 
   th, td {
+    padding: 12px;
     border-bottom: 1px solid #ddd;
-    padding: 14px 10px;
     text-align: left;
-    font-size: 16px;
   }
 
   th {
-    background-color: #eaf3ec;
-    color: #2a7f4e;
-  }
-
-  tbody tr:hover {
-    background-color: #f6fdf6;
+    background-color: #f9f9f9;
   }
 
   .summary {
     text-align: right;
-    margin-top: 25px;
-    font-size: 17px;
-    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 30px;
   }
 
   .summary p {
     margin: 6px 0;
   }
 
-  .btn-back {
+  .btn {
     display: inline-block;
-    margin-top: 30px;
-    padding: 12px 25px;
-    font-size: 16px;
-    font-weight: bold;
     background-color: #2a7f4e;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
+    color: white;
     text-decoration: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-size: 16px;
     transition: background 0.3s ease;
   }
 
-  .btn-back:hover {
+  .btn:hover {
     background-color: #24663d;
-  }
-
-  .footer {
-    margin-top: 40px;
-    font-size: 14px;
-    color: #888;
-  }
-
-  .highlight {
-    color: #2a7f4e;
-    font-weight: bold;
   }
 </style>
 </head>
 <body>
-  <div class="container">
+
+<div class="container">
+  <div class="header">
     <img src="Logo.png" alt="StoreCollect Logo" class="logo">
-
     <h1>Thank You for Your Order!</h1>
-    <p id="customerName"></p>
-    <p id="customerEmail"></p>
-    <p id="orderNumber"></p>
+    <p>Your order has been successfully placed.</p>
+  </div>
 
-    <h2>Order Details</h2>
+  <div class="content">
+    <div class="order-number">Order ID: <span id="orderNumber"></span></div>
+    <h2 id="customerName"></h2>
+
     <table id="cartTable">
       <thead>
-        <tr>
-          <th>Product</th>
-          <th>Quantity</th>
-          <th>Price (R)</th>
-        </tr>
+        <tr><th>Product</th><th>Quantity</th><th>Price (R)</th></tr>
       </thead>
       <tbody></tbody>
     </table>
 
     <div class="summary">
-      <p id="shippingCost"></p>
-      <p id="totalCost"></p>
+      <p>Shipping: R<span id="shipping"></span></p>
+      <p>Total: R<span id="total"></span></p>
     </div>
 
-    <!-- Back to Store Button -->
-    <a href="https://storecollect-pay.vercel.app" class="btn-back">Back to Store</a>
-
-    <div class="footer">
-      &copy; 2025 <span class="highlight">StoreCollect</span>. All rights reserved.
-    </div>
+    <a href="https://storecollect.net" class="btn">Continue Shopping</a>
   </div>
+</div>
 
 <script>
+  // Get URL parameters
   const params = new URLSearchParams(window.location.search);
 
-  const customerName = params.get('name') || 'Customer';
-  const customerEmail = params.get('email') || 'N/A';
-  const orderNumber = params.get('orderNumber') || 'N/A';
-  const shipping = parseFloat(params.get('shipping') || 0).toFixed(2);
-  const total = parseFloat(params.get('total') || 0).toFixed(2);
-  const cart = JSON.parse(params.get('cart') || '[]');
+  const name = params.get("name") || "Customer";
+  const orderNumber = params.get("orderNumber") || "N/A";
+  const total = params.get("total") || "0.00";
+  const shipping = params.get("shipping") || "0.00";
+  const cartData = JSON.parse(params.get("cart") || "[]");
 
-  document.getElementById('customerName').textContent = `Name: ${customerName}`;
-  document.getElementById('customerEmail').textContent = `Email: ${customerEmail}`;
-  document.getElementById('orderNumber').textContent = `Order #: ${orderNumber}`;
+  // Set customer name and order number
+  document.getElementById("customerName").textContent = `Hello, ${name}`;
+  document.getElementById("orderNumber").textContent = orderNumber;
 
-  const tbody = document.querySelector('#cartTable tbody');
+  // Populate cart table
+  const tbody = document.querySelector("#cartTable tbody")
   const EXCHANGE_RATE = 17.40;
-  
-  cart.forEach(item => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${item.title}</td>
-      <td>${item.qty}</td>
-      <td>R${(item.price*EXCHANGE_RATE).toFixed(2)}</td>
-    `;
+  cartData.forEach(item => {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${(item.price*EXCHANGE_RATE).toFixed(2)}</td>`;
     tbody.appendChild(row);
   });
 
-  document.getElementById('shippingCost').textContent = `Shipping: R${shipping}`;
-  document.getElementById('totalCost').textContent = `Total: R${total}`;
+  // Set shipping and total
+  document.getElementById("shipping").textContent = parseFloat(shipping).toFixed(2);
+  document.getElementById("total").textContent = parseFloat(total).toFixed(2);
 </script>
+
 </body>
 </html>
