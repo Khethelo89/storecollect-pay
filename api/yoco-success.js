@@ -3,99 +3,108 @@ export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).send("Method Not Allowed");
 
   const { checkoutId } = req.query;
-
-  // Base URL of your deployed thank-you page
   const thankyouUrl = "https://storecollect-pay.vercel.app/thankyou.html";
 
-  // If checkoutId is missing, redirect immediately with fallback values
   if (!checkoutId) {
-    const fallbackUrl = `${thankyouUrl}?name=Customer&total=0.00&shipping=100&orderNumber=N/A&cart=[]`;
-    console.warn("checkoutId missing, redirecting to fallback URL:", fallbackUrl);
-    return res.redirect(fallbackUrl);
+    console.warn("checkoutId missing, redirecting with fallback values.");
+    return res.redirect(
+      `${thankyouUrl}?name=Customer&total=0.00&shipping=100&orderNumber=N/A&cart=[]`
+    );
   }
 
   try {
     const secretKey = process.env.YOCO_SECRET_KEY?.trim();
     if (!secretKey) return res.status(500).send("Yoco secret key missing");
 
-    // 1️⃣ Fetch checkout details from Yoco
+    // 1️⃣ Get checkout details from Yoco
     const yoRes = await fetch(`https://payments.yoco.com/api/checkouts/${checkoutId}`, {
       headers: { "Authorization": `Bearer ${secretKey}` }
     });
-    const yoData = await yoRes.json();
+    let yoData = await yoRes.json();
 
-    console.log("💡 Yoco checkout data:", JSON.stringify(yoData, null, 2));
+    // 2️⃣ Determine if sandbox / missing data
+    const isSandbox = !yoData.customer || !yoData.lineItems || yoData.lineItems.length === 0;
 
-    // 2️⃣ Build query parameters safely
-    const nameVal = yoData.customer?.name || "Customer";
-    const totalVal = yoData.amount ? (yoData.amount / 100).toFixed(2) : "0.00";
-    const shippingVal = "100"; // your default shipping cost
-    const orderNumVal = checkoutId;
-    const cartVal = JSON.stringify(
-      (yoData.lineItems || []).map(item => ({
-        title: item.displayName || "Item",
-        qty: item.quantity || 1,
-        price: (item.pricingDetails?.[0]?.price / 100) || 0
-      }))
-    );
+    if (isSandbox) {
+      // Provide dummy data for sandbox testing
+      yoData = {
+        ...yoData,
+        customer: { name: "Alice Smith", email: "alice@example.com" },
+        lineItems: [
+          { displayName: "T-shirt", quantity: 2, pricingDetails: [{ price: 5000 }] },
+          { displayName: "Cap", quantity: 1, pricingDetails: [{ price: 5000 }] }
+        ],
+        amount: 15000,          // total in cents
+        shippingInCents: 1000   // R10 shipping
+      };
+    }
 
-    const query = new URLSearchParams({
-      name: nameVal,
-      total: totalVal,
-      shipping: shippingVal,
-      orderNumber: orderNumVal,
-      cart: cartVal
-    });
+    // 3️⃣ Calculate shipping and total
+    const shipping = yoData.shippingInCents ? yoData.shippingInCents / 100 : 100;
+    const total = ((yoData.amount + (yoData.shippingInCents || 10000)) / 100).toFixed(2);
 
-    const finalUrl = `${thankyouUrl}?${query.toString()}`;
-    console.log("➡ Redirecting to:", finalUrl);
-
-    // 3️⃣ Optional: Post to Shopify (keep your logic)
+    // 4️⃣ Create Shopify order
     const shopifyDomain = "b007a7-f0.myshopify.com";
     const shopifyAccessToken = process.env.SHOPIFY_ACCESS_TOKEN;
 
-    if (yoData.lineItems && yoData.lineItems.length > 0) {
-      const shopifyOrder = {
-        order: {
-          email: yoData.customer?.email || "customer@example.com",
-          financial_status: "paid",
-          total_price: totalVal,
-          line_items: yoData.lineItems.map(item => ({
-            title: item.displayName || "Item",
-            quantity: item.quantity || 1,
-            price: (item.pricingDetails?.[0]?.price / 100) || 0
-          })),
-          shipping_address: {
-            first_name: yoData.customer?.name?.split(" ")[0] || "First",
-            last_name: yoData.customer?.name?.split(" ")[1] || "Last",
-            address1: yoData.customer?.address1 || "Address",
-            city: yoData.customer?.city || "City",
-            province: yoData.customer?.province || "Province",
-            zip: yoData.customer?.zip || "0000",
-            country: yoData.customer?.country || "South Africa"
-          }
+    const shopifyOrder = {
+      order: {
+        email: yoData.customer.email,
+        financial_status: "paid",
+        total_price: total,
+        line_items: yoData.lineItems.map(item => ({
+          title: item.displayName,
+          quantity: item.quantity,
+          price: (item.pricingDetails?.[0]?.price / 100) || 0
+        })),
+        shipping_address: {
+          first_name: yoData.customer.name.split(" ")[0],
+          last_name: yoData.customer.name.split(" ")[1] || "",
+          address1: yoData.customer.address1 || "123 Test Street",
+          city: yoData.customer.city || "Johannesburg",
+          province: yoData.customer.province || "Gauteng",
+          zip: yoData.customer.zip || "2000",
+          country: yoData.customer.country || "South Africa"
         }
-      };
+      }
+    };
 
-      const shopifyRes = await fetch(`https://${shopifyDomain}/admin/api/2025-10/orders.json`, {
-        method: "POST",
-        headers: {
-          "X-Shopify-Access-Token": shopifyAccessToken,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(shopifyOrder)
-      });
+    const shopifyRes = await fetch(`https://${shopifyDomain}/admin/api/2025-10/orders.json`, {
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": shopifyAccessToken,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(shopifyOrder)
+    });
 
-      console.log("✅ Shopify order created:", await shopifyRes.json());
-    }
+    console.log("Shopify response:", await shopifyRes.json());
 
-    // 4️⃣ Redirect to thank-you page with fully defined URL
-    return res.redirect(finalUrl);
+    // 5️⃣ Build query string for thankyou page
+    const query = new URLSearchParams({
+      name: yoData.customer.name,
+      total: total,
+      shipping: shipping.toFixed(2),
+      orderNumber: checkoutId,
+      cart: JSON.stringify(
+        yoData.lineItems.map(item => ({
+          title: item.displayName,
+          qty: item.quantity,
+          price: (item.pricingDetails?.[0]?.price / 100) || 0
+        }))
+      )
+    });
+
+    console.log("Redirecting to:", `${thankyouUrl}?${query.toString()}`);
+
+    // 6️⃣ Redirect to thankyou page
+    return res.redirect(`${thankyouUrl}?${query.toString()}`);
 
   } catch (err) {
-    console.error("❌ Yoco success error:", err);
-    // Fallback redirect if any error occurs
-    const fallbackUrl = `${thankyouUrl}?name=Customer&total=0.00&shipping=100&orderNumber=${checkoutId}&cart=[]`;
-    return res.redirect(fallbackUrl);
+    console.error("Yoco success error:", err);
+    return res.redirect(
+      `${thankyouUrl}?name=Customer&total=0.00&shipping=100&orderNumber=${checkoutId || "N/A"}&cart=[]`
+    );
   }
 }
+
