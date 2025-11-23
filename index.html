@@ -225,7 +225,21 @@ document.addEventListener("DOMContentLoaded", () => {
             email,
             phone: form.phone.value || ""
           },
-          successUrl: "https://storecollect-pay.vercel.app/api/yoco-success",
+          successUrl:
+  "https://storecollect-pay.vercel.app/api/yoco-success?" +
+  new URLSearchParams({
+    name: firstName + " " + lastName,
+    email,
+    phone: form.phone.value || "",
+    address: form.address1.value,
+    city: form.city.value,
+    province: form.province.value,
+    zip: form.zip.value,
+    shipping: currentShipping,
+    total: totalCartAmount.toFixed(2),
+    cart: JSON.stringify(cart)
+  }),
+,
           cancelUrl: "https://storecollect-pay.vercel.app/cancel"
         })
       });
