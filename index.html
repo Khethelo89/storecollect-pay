@@ -5,81 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StoreCollect Checkout</title>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    background-color: #f3f3f3;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    margin: 0;
-  }
-
-  .container {
-    background-color: #fff;
-    max-width: 600px;
-    width: 100%;
-    padding: 30px 40px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    text-align: center;
-  }
-
-  h2 {
-    color: #2a7f4e;
-    margin-bottom: 20px;
-  }
-
-  input, select, button {
-    width: 100%;
-    padding: 10px;
-    margin: 8px 0;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    font-size: 16px;
-  }
-
-  button {
-    background-color: #2a7f4e;
-    color: white;
-    border: none;
-    cursor: pointer;
-    transition: background 0.3s ease;
-  }
-
-  button:hover {
-    background-color: #24663d;
-  }
-
-  #status {
-    margin-top: 20px;
-    padding: 12px;
-    border-radius: 8px;
-    font-weight: bold;
-    word-break: break-word;
-  }
-
+  body { font-family: Arial, sans-serif; background-color: #f3f3f3; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+  .container { background-color: #fff; max-width: 600px; width: 100%; padding: 30px 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
+  h2 { color: #2a7f4e; margin-bottom: 20px; }
+  input, select, button { width: 100%; padding: 10px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; }
+  button { background-color: #2a7f4e; color: white; border: none; cursor: pointer; transition: background 0.3s ease; }
+  button:hover { background-color: #24663d; }
+  #status { margin-top: 20px; padding: 12px; border-radius: 8px; font-weight: bold; word-break: break-word; }
   .success { background: #d4edda; color: #155724; }
   .error { background: #f8d7da; color: #721c24; }
   .info { background: #fff3cd; color: #856404; }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 20px;
-  }
-
-  th, td {
-    border-bottom: 1px solid #ccc;
-    padding: 8px;
-    text-align: left;
-  }
-
-  #shippingDisplay {
-    font-size: 16px;
-    margin-bottom: 10px;
-    color: #555;
-  }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+  th, td { border-bottom: 1px solid #ccc; padding: 8px; text-align: left; }
+  #shippingDisplay { font-size: 16px; margin-bottom: 10px; color: #555; }
 </style>
 </head>
 <body>
@@ -225,21 +163,21 @@ document.addEventListener("DOMContentLoaded", () => {
             email,
             phone: form.phone.value || ""
           },
+          // ✅ Pass frontend values to yoco-success
           successUrl:
-  "https://storecollect-pay.vercel.app/api/yoco-success?" +
-  new URLSearchParams({
-    name: firstName + " " + lastName,
-    email,
-    phone: form.phone.value || "",
-    address: form.address1.value,
-    city: form.city.value,
-    province: form.province.value,
-    zip: form.zip.value,
-    shipping: currentShipping,
-    total: totalCartAmount.toFixed(2),
-    cart: JSON.stringify(cart)
-  }),
-,
+            "https://storecollect-pay.vercel.app/api/yoco-success?" +
+            new URLSearchParams({
+              name: firstName + " " + lastName,
+              email,
+              phone: form.phone.value || "",
+              address: form.address1.value,
+              city: form.city.value,
+              province: form.province.value,
+              zip: form.zip.value,
+              shipping: currentShipping,
+              total: totalCartAmount.toFixed(2),
+              cart: JSON.stringify(cart)
+            }).toString(),
           cancelUrl: "https://storecollect-pay.vercel.app/cancel"
         })
       });
