@@ -112,7 +112,7 @@
 </head>
 <body>
   <div class="container">
-    <img src="logo.png" alt="StoreCollect Logo" class="logo">
+    <img src="Logo.png" alt="StoreCollect Logo" class="logo">
 
     <h1>Thank You for Your Order!</h1>
     <p id="customerName"></p>
@@ -159,12 +159,14 @@
   document.getElementById('orderNumber').textContent = `Order #: ${orderNumber}`;
 
   const tbody = document.querySelector('#cartTable tbody');
+  const EXCHANGE_RATE = 17.40;
+  const priceInRands = item.price * EXCHANGE_RATE;
   cart.forEach(item => {
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${item.title}</td>
       <td>${item.qty}</td>
-      <td>R(${item.price.toFixed(2)})*17.4</td>
+      <td>R + priceInRands </td>
     `;
     tbody.appendChild(row);
   });
