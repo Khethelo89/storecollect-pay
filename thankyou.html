@@ -1,89 +1,137 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Thank You for Your Order!</title>
-  <style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StoreCollect - Thank You</title>
+
+<style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f9f9f9;
-      color: #333;
-      text-align: center;
-      padding: 40px 20px;
+        font-family: Arial, sans-serif;
+        background: #f7f7f7;
+        padding: 20px;
+        margin: 0;
     }
+
     .container {
-      max-width: 600px;
-      margin: auto;
-      background: #fff;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        max-width: 650px;
+        margin: auto;
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
-    h1 { color: #27ae60; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
+
+    .logo {
+        width: 140px;
+        display: block;
+        margin: 0 auto 15px auto;
     }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 10px;
+
+    h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 10px;
     }
-    th { background: #f3f3f3; }
-    .total {
-      font-weight: bold;
-      margin-top: 20px;
-      font-size: 1.2em;
+
+    .highlight-box {
+        background: #ffe9d6;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        border-left: 5px solid #ff8c42;
     }
-  </style>
+
+    .row { margin: 10px 0; font-size: 16px; }
+
+    h3 {
+        border-bottom: 2px solid #ff8c42;
+        padding-bottom: 6px;
+        color: #333;
+    }
+
+    .cart-item {
+        border-bottom: 1px solid #ddd;
+        padding: 10px 0;
+    }
+
+    .btn {
+        display: block;
+        text-align: center;
+        margin-top: 25px;
+        background: #ff8c42;
+        color: white;
+        padding: 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: 0.2s;
+    }
+
+    .btn:hover {
+        background: #e57732;
+    }
+</style>
 </head>
+
 <body>
-  <div class="container">
-    <h1>Thank You, <span id="customerName">Customer</span>!</h1>
-    <p>Your order has been successfully placed.</p>
+<div class="container">
 
-    <table>
-      <thead>
-        <tr>
-          <th>Product</th>
-          <th>Qty</th>
-          <th>Price (R)</th>
-        </tr>
-      </thead>
-      <tbody id="cartItems">
-        <!-- Cart items will appear here -->
-      </tbody>
-    </table>
+    <!-- StoreCollect Logo -->
+    <img src="https://i.ibb.co/RyZqv7g/storecollect-logo.png" class="logo" alt="StoreCollect">
 
-    <p class="total">Shipping: R<span id="shippingCost">0.00</span></p>
-    <p class="total">Total: R<span id="orderTotal">0.00</span></p>
-  </div>
+    <h2>Thank You for Your Order!</h2>
 
-  <script>
-    // Read query parameters
-    const query = new URLSearchParams(window.location.search);
-    const name = query.get("name") || "Customer";
-    const total = query.get("total") || "0.00";
-    const shipping = query.get("shipping") || "0.00";
-    const cart = JSON.parse(query.get("cart") || "[]");
+    <div class="highlight-box">
+        <strong>Delivery Time:</strong> Your order will be delivered within <strong>3–5 business days</strong>.
+    </div>
 
-    // Display customer info
-    document.getElementById("customerName").textContent = name;
-    document.getElementById("shippingCost").textContent = parseFloat(shipping).toFixed(2);
-    document.getElementById("orderTotal").textContent = parseFloat(total).toFixed(2);
+    <div class="row"><strong>Name:</strong> <span id="name"></span></div>
+    <div class="row"><strong>Total Paid:</strong> R<span id="total"></span></div>
+    <div class="row"><strong>Shipping Cost:</strong> R<span id="shipping"></span></div>
+    <div class="row"><strong>Order Number:</strong> <span id="orderNumber"></span></div>
 
-    // Populate cart table
-    const cartContainer = document.getElementById("cartItems");
-    cart.forEach(item => {
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${item.title}</td>
-        <td>${item.qty}</td>
-        <td>${parseFloat(item.price).toFixed(2)}</td>
-      `;
-      cartContainer.appendChild(row);
-    });
-  </script>
+    <h3>Items Ordered</h3>
+    <div id="cartItems"></div>
+
+    <!-- Back to store button -->
+    <a href="https://storecollect.net" class="btn">Back to Store</a>
+
+</div>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+
+    document.getElementById("name").textContent = params.get("name") || "Customer";
+    document.getElementById("total").textContent = params.get("total") || "0.00";
+    document.getElementById("shipping").textContent = params.get("shipping") || "0";
+    document.getElementById("orderNumber").textContent = params.get("orderNumber") || "N/A";
+
+    const cartData = params.get("cart");
+
+    if (cartData) {
+        try {
+            const cart = JSON.parse(cartData);
+            let html = "";
+
+            cart.forEach(item => {
+                html += `
+                    <div class="cart-item">
+                        <strong>${item.title}</strong><br>
+                        Qty: ${item.qty} × R${item.price}<br>
+                        <strong>Subtotal:</strong> R${(item.qty * item.price).toFixed(2)}
+                    </div>
+                `;
+            });
+
+            document.getElementById("cartItems").innerHTML = html;
+
+        } catch (e) {
+            document.getElementById("cartItems").innerHTML = "<p>Error loading items.</p>";
+        }
+    }
+</script>
+
 </body>
 </html>
+
