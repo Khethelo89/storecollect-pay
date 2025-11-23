@@ -5,64 +5,125 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StoreCollect Checkout</title>
 <style>
-body { font-family: Arial; text-align:center; padding:20px; background:#f3f3f3; }
-.container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
-input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:8px; }
-button { background:black; color:white; font-size:16px; cursor:pointer; }
-button:hover { background:#333; }
-#status { margin-top:20px; padding:12px; border-radius:8px; font-weight:bold; word-break: break-word; }
-.success { background: #d4edda; color: #155724; }
-.error { background: #f8d7da; color: #721c24; }
-.info { background: #fff3cd; color: #856404; }
-table { width:100%; border-collapse: collapse; margin-bottom:20px; }
-th, td { border-bottom:1px solid #ccc; padding:8px; text-align:left; }
-#shippingDisplay { font-size: 16px; margin-bottom: 10px; color: #555; }
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f3f3f3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+  }
+
+  .container {
+    background-color: #fff;
+    max-width: 600px;
+    width: 100%;
+    padding: 30px 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+
+  h2 {
+    color: #2a7f4e;
+    margin-bottom: 20px;
+  }
+
+  input, select, button {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+  }
+
+  button {
+    background-color: #2a7f4e;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+
+  button:hover {
+    background-color: #24663d;
+  }
+
+  #status {
+    margin-top: 20px;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    word-break: break-word;
+  }
+
+  .success { background: #d4edda; color: #155724; }
+  .error { background: #f8d7da; color: #721c24; }
+  .info { background: #fff3cd; color: #856404; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+
+  th, td {
+    border-bottom: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+  }
+
+  #shippingDisplay {
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: #555;
+  }
 </style>
 </head>
 <body>
 
 <div class="container">
-<h2>StoreCollect Checkout</h2>
+  <h2>StoreCollect Checkout</h2>
 
-<form id="checkoutForm">
-  <input type="text" name="firstName" placeholder="First Name" required>
-  <input type="text" name="lastName" placeholder="Last Name" required>
-  <input type="email" name="email" placeholder="Email" required>
-  <input type="text" name="phone" placeholder="Phone">
-  <input type="text" name="address1" placeholder="Address" required>
-  <input type="text" name="city" placeholder="City" required>
-  <select name="province" required>
-    <option value="">Select Province</option>
-    <option value="Gauteng">Gauteng</option>
-    <option value="KwaZulu-Natal">KwaZulu-Natal</option>
-    <option value="Western Cape">Western Cape</option>
-    <option value="Eastern Cape">Eastern Cape</option>
-    <option value="Free State">Free State</option>
-    <option value="Mpumalanga">Mpumalanga</option>
-    <option value="Limpopo">Limpopo</option>
-    <option value="North West">North West</option>
-    <option value="Northern Cape">Northern Cape</option>
-  </select>
-  <input type="text" name="zip" placeholder="Postal Code" required>
-</form>
+  <form id="checkoutForm">
+    <input type="text" name="firstName" placeholder="First Name" required>
+    <input type="text" name="lastName" placeholder="Last Name" required>
+    <input type="email" name="email" placeholder="Email" required>
+    <input type="text" name="phone" placeholder="Phone">
+    <input type="text" name="address1" placeholder="Address" required>
+    <input type="text" name="city" placeholder="City" required>
+    <select name="province" required>
+      <option value="">Select Province</option>
+      <option value="Gauteng">Gauteng</option>
+      <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+      <option value="Western Cape">Western Cape</option>
+      <option value="Eastern Cape">Eastern Cape</option>
+      <option value="Free State">Free State</option>
+      <option value="Mpumalanga">Mpumalanga</option>
+      <option value="Limpopo">Limpopo</option>
+      <option value="North West">North West</option>
+      <option value="Northern Cape">Northern Cape</option>
+    </select>
+    <input type="text" name="zip" placeholder="Postal Code" required>
+  </form>
 
-<h3>Cart:</h3>
-<table id="cartTable">
-<thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead>
-<tbody></tbody>
-</table>
+  <h3>Cart:</h3>
+  <table id="cartTable">
+    <thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead>
+    <tbody></tbody>
+  </table>
 
-<h3 id="shippingDisplay">Shipping: R0</h3>
+  <h3 id="shippingDisplay">Shipping: R0</h3>
+  <h3>Total: R<span id="grandTotal">0</span></h3>
 
-<h3>Total: R<span id="grandTotal">0</span></h3>
-
-<button id="payButton">Pay Now</button>
-<div id="status" class="info">Fill the form and click "Pay Now".</div>
+  <button id="payButton">Pay Now</button>
+  <div id="status" class="info">Fill the form and click "Pay Now".</div>
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-
   const EXCHANGE_RATE = 17.40;
   const form = document.getElementById("checkoutForm");
   const statusEl = document.getElementById("status");
@@ -76,21 +137,18 @@ document.addEventListener("DOMContentLoaded", () => {
   let totalCartAmount = 0;
   let currentShipping = 0;
 
-  // Load cart from URL (single or multiple items)
+  // Load cart from URL
   for (let i = 0;; i++) {
     const title = params.get(i === 0 ? "title" : `title${i}`);
     const price = parseFloat(params.get(i === 0 ? "price" : `price${i}`));
     const qty = parseInt(params.get(i === 0 ? "qty" : `qty${i}`), 10);
-
     if (!title) break;
     if (!isNaN(price) && !isNaN(qty)) cart.push({ title, price, qty });
   }
 
-  // SHIPPING FUNCTION
   function getShippingCost(provinceInput, cityInput) {
     const cityLower = (cityInput.value || "").toLowerCase().trim();
     const provinceLower = (provinceInput.value || "").toLowerCase().trim();
-
     let cost = 0;
     let reason = "";
 
@@ -109,19 +167,14 @@ document.addEventListener("DOMContentLoaded", () => {
       cost = 0;
       reason = "Please select your province";
     }
-
-    console.log("Shipping cost:", cost, "| Reason:", reason);
     return { cost, reason };
   }
 
-  // UPDATE TOTAL FUNCTION
   function updateTotals() {
     let total = 0;
     const shipping = getShippingCost(form.province, form.city);
     currentShipping = shipping.cost;
-
     tbody.innerHTML = "";
-
     cart.forEach(item => {
       const priceInRands = item.price * EXCHANGE_RATE;
       const row = document.createElement("tr");
@@ -129,28 +182,20 @@ document.addEventListener("DOMContentLoaded", () => {
       tbody.appendChild(row);
       total += priceInRands * item.qty;
     });
-
     totalCartAmount = total + currentShipping;
     grandTotalEl.textContent = totalCartAmount.toFixed(2);
-
-    // Single line shipping display
     shippingDisplayEl.textContent =
       `Shipping: R${currentShipping.toFixed(2)} (${shipping.reason})`;
   }
 
-  // Listeners for dynamic update
   form.province.addEventListener("input", updateTotals);
   form.city.addEventListener("input", updateTotals);
-
-  // Initial render
   updateTotals();
 
-  // PAY BUTTON
   payButton.addEventListener("click", async () => {
     const firstName = form.firstName.value.trim();
     const lastName = form.lastName.value.trim();
     const email = form.email.value.trim();
-
     if (!firstName || !lastName || !email || !form.address1.value.trim() ||
         !form.city.value.trim() || !form.zip.value.trim() || !form.province.value) {
       statusEl.textContent = "Please fill all required fields.";
@@ -181,30 +226,29 @@ document.addEventListener("DOMContentLoaded", () => {
             phone: form.phone.value || ""
           },
           successUrl: "https://storecollect-pay.vercel.app/api/yoco-success",
-          cancelUrl: "https://storecollect.net/cancel"
+          cancelUrl: "https://storecollect-pay.vercel.app/cancel"
         })
       });
 
       const data = await res.json();
       const checkoutUrl = data.redirectUrl || data.checkoutUrl;
 
-if (!checkoutUrl) {
-  statusEl.textContent = 
-    "Checkout URL missing! Backend returned: " + JSON.stringify(data, null, 2);
-  statusEl.className = "error";
-  payButton.disabled = false;
-  return;
-}
-
+      if (!checkoutUrl) {
+        statusEl.textContent =
+          "Checkout URL missing! Backend returned: " + JSON.stringify(data, null, 2);
+        statusEl.className = "error";
+        payButton.disabled = false;
+        return;
+      }
 
       window.location.href = checkoutUrl;
+
     } catch (err) {
       statusEl.textContent = "Server error: " + err.message;
       statusEl.className = "error";
       payButton.disabled = false;
     }
   });
-
 });
 </script>
 
