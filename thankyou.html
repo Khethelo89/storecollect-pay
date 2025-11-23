@@ -18,7 +18,7 @@
 
   .container {
     background-color: #fff;
-    max-width: 750px;
+    max-width: 800px;
     width: 100%;
     border-radius: 12px;
     overflow: hidden;
@@ -52,11 +52,21 @@
     padding: 30px 40px;
   }
 
-  .order-number {
-    font-size: 22px;
-    font-weight: bold;
+  .order-badge {
+    display: inline-block;
+    background-color: #ffd700;
     color: #2a7f4e;
-    margin-bottom: 20px;
+    font-weight: bold;
+    font-size: 24px;
+    padding: 12px 25px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+
+  .customer-name {
+    font-size: 20px;
+    margin-bottom: 25px;
   }
 
   table {
@@ -105,18 +115,18 @@
 
 <div class="container">
   <div class="header">
-    <img src="Logo.png" alt="StoreCollect Logo" class="logo">
+    <img src="logo.png" alt="StoreCollect Logo" class="logo">
     <h1>Thank You for Your Order!</h1>
     <p>Your order has been successfully placed.</p>
   </div>
 
   <div class="content">
-    <div class="order-number">Order ID: <span id="orderNumber"></span></div>
-    <h2 id="customerName"></h2>
+    <div class="order-badge" id="orderNumber"></div>
+    <div class="customer-name" id="customerName"></div>
 
     <table id="cartTable">
       <thead>
-        <tr><th>Product</th><th>Quantity</th><th>Price (R)</th></tr>
+        <tr><th>Product</th><th>Quantity</th><th>Price (R)</th><th>Total (R)</th></tr>
       </thead>
       <tbody></tbody>
     </table>
@@ -131,31 +141,28 @@
 </div>
 
 <script>
-  // Get URL parameters
   const params = new URLSearchParams(window.location.search);
 
   const name = params.get("name") || "Customer";
   const orderNumber = params.get("orderNumber") || "N/A";
-  const total = params.get("total") || "0.00";
-  const shipping = params.get("shipping") || "0.00";
+  const total = parseFloat(params.get("total") || "0.00");
+  const shipping = parseFloat(params.get("shipping") || "0.00");
   const cartData = JSON.parse(params.get("cart") || "[]");
 
-  // Set customer name and order number
   document.getElementById("customerName").textContent = `Hello, ${name}`;
-  document.getElementById("orderNumber").textContent = orderNumber;
+  document.getElementById("orderNumber").textContent = `Order ID: ${orderNumber}`;
 
-  // Populate cart table
-  const tbody = document.querySelector("#cartTable tbody")
-  const EXCHANGE_RATE = 17.40;
+  const tbody = document.querySelector("#cartTable tbody");
+    const EXCHANGE_RATE = 17.40;
   cartData.forEach(item => {
     const row = document.createElement("tr");
-    row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${(item.price*EXCHANGE_RATE).toFixed(2)}</td>`;
+    const totalPrice = (item.price * item.qty).toFixed(2);
+    row.innerHTML = `<td>${item.title}</td><td>${item.qty}</td><td>R${(item.price*EXCHANGE_RATE).toFixed(2)}</td><td>R${totalPrice}</td>`;
     tbody.appendChild(row);
   });
 
-  // Set shipping and total
-  document.getElementById("shipping").textContent = parseFloat(shipping).toFixed(2);
-  document.getElementById("total").textContent = parseFloat(total).toFixed(2);
+  document.getElementById("shipping").textContent = shipping.toFixed(2);
+  document.getElementById("total").textContent = total.toFixed(2);
 </script>
 
 </body>
