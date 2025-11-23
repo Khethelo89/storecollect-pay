@@ -1,112 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Thank You - StoreCollect</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f3f3f3;
-      color: #333;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thank You - StoreCollect</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f2f5;
+    margin: 0;
+    padding: 0;
+  }
 
-    .container {
-      background-color: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      padding: 30px 40px;
-      max-width: 500px;
-      text-align: center;
-    }
+  .container {
+    max-width: 800px;
+    margin: 50px auto;
+    background-color: #fff;
+    padding: 50px 40px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    text-align: center;
+  }
 
-    h1 {
-      color: #2a7f4e; /* StoreCollect green */
-      margin-bottom: 10px;
-    }
+  img.logo {
+    max-width: 180px;
+    margin-bottom: 30px;
+  }
 
-    p, li {
-      font-size: 16px;
-      margin: 5px 0;
-    }
+  h1 {
+    color: #2a7f4e;
+    margin-bottom: 10px;
+    font-size: 28px;
+  }
 
-    ul {
-      list-style: none;
-      padding: 0;
-      margin-top: 10px;
-    }
+  p {
+    color: #555;
+    font-size: 16px;
+    margin: 6px 0;
+  }
 
-    li {
-      background-color: #f0f8f2;
-      border-radius: 6px;
-      padding: 8px 12px;
-      margin-bottom: 5px;
-    }
+  h2 {
+    color: #2a7f4e;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    font-size: 22px;
+  }
 
-    button {
-      background-color: #2a7f4e;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 12px 20px;
-      font-size: 16px;
-      cursor: pointer;
-      margin-top: 20px;
-      transition: background 0.3s ease;
-    }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  }
 
-    button:hover {
-      background-color: #24663d;
-    }
+  th, td {
+    border-bottom: 1px solid #ddd;
+    padding: 14px 10px;
+    text-align: left;
+    font-size: 16px;
+  }
 
-    .delivery-notice {
-      color: #2a7f4e;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-  </style>
+  th {
+    background-color: #eaf3ec;
+    color: #2a7f4e;
+  }
+
+  tbody tr:hover {
+    background-color: #f6fdf6;
+  }
+
+  .summary {
+    text-align: right;
+    margin-top: 25px;
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .summary p {
+    margin: 6px 0;
+  }
+
+  .btn-back {
+    display: inline-block;
+    margin-top: 30px;
+    padding: 12px 25px;
+    font-size: 16px;
+    font-weight: bold;
+    background-color: #2a7f4e;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.3s ease;
+  }
+
+  .btn-back:hover {
+    background-color: #24663d;
+  }
+
+  .footer {
+    margin-top: 40px;
+    font-size: 14px;
+    color: #888;
+  }
+
+  .highlight {
+    color: #2a7f4e;
+    font-weight: bold;
+  }
+</style>
 </head>
 <body>
   <div class="container">
-    <h1 id="customerName">Thank you, Customer!</h1>
-    <p>Order Number: <span id="orderNumber">N/A</span></p>
-    <p>Total: R<span id="total">0.00</span></p>
-    <p>Shipping: R<span id="shipping">0.00</span></p>
-    <p class="delivery-notice">🚚 Your order will be delivered in 6 days</p>
+    <img src="logo.png" alt="StoreCollect Logo" class="logo">
 
-    <h2>Items:</h2>
-    <ul id="cartList"></ul>
+    <h1>Thank You for Your Order!</h1>
+    <p id="customerName"></p>
+    <p id="customerEmail"></p>
+    <p id="orderNumber"></p>
 
-    <button onclick="window.location.href='index.html'">Back to Store</button>
+    <h2>Order Details</h2>
+    <table id="cartTable">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Quantity</th>
+          <th>Price (R)</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="summary">
+      <p id="shippingCost"></p>
+      <p id="totalCost"></p>
+    </div>
+
+    <!-- Back to Store Button -->
+    <a href="https://storecollect-pay.vercel.app" class="btn-back">Back to Store</a>
+
+    <div class="footer">
+      &copy; 2025 <span class="highlight">StoreCollect</span>. All rights reserved.
+    </div>
   </div>
 
-  <script>
-    // Parse URL query parameters
-    const params = new URLSearchParams(window.location.search);
-    const name = params.get("name") || "Customer";
-    const total = params.get("total") || "0.00";
-    const shipping = params.get("shipping") || "0.00";
-    const orderNumber = params.get("orderNumber") || "N/A";
-    const cart = JSON.parse(params.get("cart") || "[]");
+<script>
+  const params = new URLSearchParams(window.location.search);
 
-    // Update UI
-    document.getElementById("customerName").textContent = `Thank you, ${name}!`;
-    document.getElementById("total").textContent = total;
-    document.getElementById("shipping").textContent = shipping;
-    document.getElementById("orderNumber").textContent = orderNumber;
+  const customerName = params.get('name') || 'Customer';
+  const customerEmail = params.get('email') || 'N/A';
+  const orderNumber = params.get('orderNumber') || 'N/A';
+  const shipping = parseFloat(params.get('shipping') || 0).toFixed(2);
+  const total = parseFloat(params.get('total') || 0).toFixed(2);
+  const cart = JSON.parse(params.get('cart') || '[]');
 
-    // Render cart items
-    const cartList = document.getElementById("cartList");
-    cart.forEach(item => {
-      const li = document.createElement("li");
-      li.textContent = `${item.qty} x ${item.title} - R${item.price.toFixed(2)}`;
-      cartList.appendChild(li);
-    });
-  </script>
+  document.getElementById('customerName').textContent = `Name: ${customerName}`;
+  document.getElementById('customerEmail').textContent = `Email: ${customerEmail}`;
+  document.getElementById('orderNumber').textContent = `Order #: ${orderNumber}`;
+
+  const tbody = document.querySelector('#cartTable tbody');
+  cart.forEach(item => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${item.title}</td>
+      <td>${item.qty}</td>
+      <td>R${item.price.toFixed(2)}</td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  document.getElementById('shippingCost').textContent = `Shipping: R${shipping}`;
+  document.getElementById('totalCost').textContent = `Total: R${total}`;
+</script>
 </body>
 </html>
-
