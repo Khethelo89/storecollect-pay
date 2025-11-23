@@ -7,6 +7,14 @@ export default async function handler(req, res) {
   const { checkoutId } = req.query;
   const thankyouUrl = "https://storecollect-pay.vercel.app/thankyou.html";
 
+  // Function to generate 4-character order number
+  function generateOrderCode(id) {
+    if (!id) return Math.random().toString(36).substring(2, 6).toUpperCase();
+    return id.slice(-4).toUpperCase();
+  }
+
+  const orderNumber = generateOrderCode(checkoutId);
+
   try {
     const secretKey = process.env.YOCO_SECRET_KEY?.trim();
     const shopifyAccessToken = process.env.SHOPIFY_ACCESS_TOKEN?.trim();
@@ -18,6 +26,7 @@ export default async function handler(req, res) {
     if (!checkoutId) {
       console.warn("checkoutId missing, redirecting with fallback values.");
       const params = req.query;
+      params.orderNumber = orderNumber; // use 4-char code even if fallback
       return res.redirect(`${thankyouUrl}?${new URLSearchParams(params).toString()}`);
     }
 
@@ -62,6 +71,7 @@ export default async function handler(req, res) {
         email: yoData.customer.email,
         financial_status: "paid",
         total_price: total,
+        note: `Order ID: ${orderNumber}`,
         line_items: yoData.lineItems.map(item => ({
           title: item.displayName,
           quantity: item.quantity,
@@ -102,7 +112,7 @@ export default async function handler(req, res) {
       zip: yoData.customer.zip || "",
       shipping: shipping.toFixed(2),
       total: total,
-      orderNumber: checkoutId,
+      orderNumber: orderNumber, // 4-character code
       cart: JSON.stringify(
         yoData.lineItems.map(item => ({
           title: item.displayName,
@@ -119,7 +129,7 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error("Yoco success error:", err);
     return res.redirect(
-      `${thankyouUrl}?name=Customer&email=N/A&phone=&address=&city=&province=&zip=&shipping=0&total=0&orderNumber=${checkoutId || "N/A"}&cart=[]`
+      `${thankyouUrl}?name=Customer&email=N/A&phone=&address=&city=&province=&zip=&shipping=0&total=0&orderNumber=${orderNumber}&cart=[]`
     );
   }
 }
