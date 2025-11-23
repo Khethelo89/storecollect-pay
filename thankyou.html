@@ -1,150 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>StoreCollect - Thank You</title>
-
-<style>
+  <meta charset="UTF-8">
+  <title>Thank You - StoreCollect</title>
+  <style>
     body {
-        font-family: Arial, sans-serif;
-        background: #f7f7f7;
-        padding: 20px;
-        margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f3f3f3;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
     }
 
     .container {
-        max-width: 650px;
-        margin: auto;
-        background: white;
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      background-color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      padding: 30px 40px;
+      max-width: 500px;
+      text-align: center;
     }
 
-    .logo {
-        width: 140px;
-        display: block;
-        margin: 0 auto 15px auto;
+    h1 {
+      color: #2a7f4e; /* StoreCollect green */
+      margin-bottom: 10px;
     }
 
-    h2 {
-        text-align: center;
-        color: #333;
-        margin-bottom: 10px;
+    p, li {
+      font-size: 16px;
+      margin: 5px 0;
     }
 
-    .highlight-box {
-        background: #e6f4ea;      /* Light green background */
-        padding: 12px;
-        border-radius: 8px;
-        margin-bottom: 15px;
-        border-left: 5px solid #28a745; /* Green left border */
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 10px;
     }
 
-    .row { margin: 10px 0; font-size: 16px; }
-
-    h3 {
-        border-bottom: 2px solid #28a745; /* Green underline */
-        padding-bottom: 6px;
-        color: #333;
+    li {
+      background-color: #f0f8f2;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-bottom: 5px;
     }
 
-    .cart-item {
-        border-bottom: 1px solid #ddd;
-        padding: 10px 0;
+    button {
+      background-color: #2a7f4e;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.3s ease;
     }
 
-    .btn {
-        display: block;
-        text-align: center;
-        margin-top: 25px;
-        background: #28a745;       /* Green button */
-        color: white;
-        padding: 12px;
-        border-radius: 8px;
-        text-decoration: none;
-        font-weight: bold;
-        transition: 0.2s;
+    button:hover {
+      background-color: #24663d;
     }
 
-    .btn:hover {
-        background: #218838;       /* Darker green on hover */
+    .delivery-notice {
+      color: #2a7f4e;
+      font-weight: bold;
+      margin-top: 10px;
     }
-
-    /* Scrollable cart if too long */
-    #cartItems {
-        max-height: 300px;
-        overflow-y: auto;
-    }
-</style>
+  </style>
 </head>
-
 <body>
-<div class="container">
+  <div class="container">
+    <h1 id="customerName">Thank you, Customer!</h1>
+    <p>Order Number: <span id="orderNumber">N/A</span></p>
+    <p>Total: R<span id="total">0.00</span></p>
+    <p>Shipping: R<span id="shipping">0.00</span></p>
+    <p class="delivery-notice">🚚 Your order will be delivered in 6 days</p>
 
-    <!-- StoreCollect Logo -->
-    <img src="Logo.png" class="logo" alt="StoreCollect">
+    <h2>Items:</h2>
+    <ul id="cartList"></ul>
 
-    <h2>Thank You for Your Order!</h2>
+    <button onclick="window.location.href='index.html'">Back to Store</button>
+  </div>
 
-    <div class="highlight-box">
-        <strong>Delivery Time:</strong> Your order will be delivered within <strong>3–5 business days</strong>.
-    </div>
-
-    <div class="row"><strong>Name:</strong> <span id="name"></span></div>
-    <div class="row"><strong>Total Paid:</strong> R<span id="total"></span></div>
-    <div class="row"><strong>Shipping Cost:</strong> R<span id="shipping"></span></div>
-    <div class="row"><strong>Order Number:</strong> <span id="orderNumber"></span></div>
-
-    <h3>Items Ordered</h3>
-    <div id="cartItems"></div>
-
-    <!-- Back to store button -->
-    <a href="https://storecollect.net" class="btn">Back to Store</a>
-
-</div>
-
-<script>
-(function() {
+  <script>
+    // Parse URL query parameters
     const params = new URLSearchParams(window.location.search);
+    const name = params.get("name") || "Customer";
+    const total = params.get("total") || "0.00";
+    const shipping = params.get("shipping") || "0.00";
+    const orderNumber = params.get("orderNumber") || "N/A";
+    const cart = JSON.parse(params.get("cart") || "[]");
 
-    document.getElementById("name").textContent = params.get("name") || "Customer";
-    document.getElementById("total").textContent = params.get("total") || "0.00";
-    document.getElementById("shipping").textContent = params.get("shipping") || "0";
-    document.getElementById("orderNumber").textContent = params.get("orderNumber") || "N/A";
+    // Update UI
+    document.getElementById("customerName").textContent = `Thank you, ${name}!`;
+    document.getElementById("total").textContent = total;
+    document.getElementById("shipping").textContent = shipping;
+    document.getElementById("orderNumber").textContent = orderNumber;
 
-    const cartData = params.get("cart");
-    const cartContainer = document.getElementById("cartItems");
-
-    if (cartData) {
-        try {
-            // Decode URI and parse JSON safely
-            const decoded = decodeURIComponent(cartData);
-            const cart = JSON.parse(decoded);
-
-            if (cart.length === 0) {
-                cartContainer.innerHTML = "<p>No items found in cart.</p>";
-            } else {
-                const html = cart.map(item => `
-                    <div class="cart-item">
-                        <strong>${item.title || "Item"}</strong><br>
-                        Qty: ${item.qty || 1} × R${item.price || 0}<br>
-                        <strong>Subtotal:</strong> R${((item.qty || 1)*(item.price || 0)).toFixed(2)}
-                    </div>
-                `).join("");
-                cartContainer.innerHTML = html;
-            }
-
-        } catch (e) {
-            console.error("Error parsing cart JSON:", e);
-            cartContainer.innerHTML = "<p>Could not load cart items.</p>";
-        }
-    } else {
-        cartContainer.innerHTML = "<p>No cart data available.</p>";
-    }
-})();
-</script>
-
+    // Render cart items
+    const cartList = document.getElementById("cartList");
+    cart.forEach(item => {
+      const li = document.createElement("li");
+      li.textContent = `${item.qty} x ${item.title} - R${item.price.toFixed(2)}`;
+      cartList.appendChild(li);
+    });
+  </script>
 </body>
 </html>
+
