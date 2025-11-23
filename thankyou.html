@@ -71,6 +71,12 @@
     .btn:hover {
         background: #e57732;
     }
+
+    /* Scrollable cart if too long */
+    #cartItems {
+        max-height: 300px;
+        overflow-y: auto;
+    }
 </style>
 </head>
 
@@ -78,7 +84,7 @@
 <div class="container">
 
     <!-- StoreCollect Logo -->
-    <img src="Logo.png" class="logo" alt="StoreCollect">
+    <img src="https://i.ibb.co/RyZqv7g/storecollect-logo.png" class="logo" alt="StoreCollect">
 
     <h2>Thank You for Your Order!</h2>
 
@@ -100,6 +106,7 @@
 </div>
 
 <script>
+(function() {
     const params = new URLSearchParams(window.location.search);
 
     document.getElementById("name").textContent = params.get("name") || "Customer";
@@ -108,30 +115,36 @@
     document.getElementById("orderNumber").textContent = params.get("orderNumber") || "N/A";
 
     const cartData = params.get("cart");
+    const cartContainer = document.getElementById("cartItems");
 
     if (cartData) {
         try {
-            const cart = JSON.parse(cartData);
-            let html = "";
+            // Decode URI and parse JSON safely
+            const decoded = decodeURIComponent(cartData);
+            const cart = JSON.parse(decoded);
 
-            cart.forEach(item => {
-                html += `
+            if (cart.length === 0) {
+                cartContainer.innerHTML = "<p>No items found in cart.</p>";
+            } else {
+                const html = cart.map(item => `
                     <div class="cart-item">
-                        <strong>${item.title}</strong><br>
-                        Qty: ${item.qty} × R${item.price}<br>
-                        <strong>Subtotal:</strong> R${(item.qty * item.price).toFixed(2)}
+                        <strong>${item.title || "Item"}</strong><br>
+                        Qty: ${item.qty || 1} × R${item.price || 0}<br>
+                        <strong>Subtotal:</strong> R${((item.qty || 1)*(item.price || 0)).toFixed(2)}
                     </div>
-                `;
-            });
-
-            document.getElementById("cartItems").innerHTML = html;
+                `).join("");
+                cartContainer.innerHTML = html;
+            }
 
         } catch (e) {
-            document.getElementById("cartItems").innerHTML = "<p>Error loading items.</p>";
+            console.error("Error parsing cart JSON:", e);
+            cartContainer.innerHTML = "<p>Could not load cart items.</p>";
         }
+    } else {
+        cartContainer.innerHTML = "<p>No cart data available.</p>";
     }
+})();
 </script>
 
 </body>
 </html>
-
