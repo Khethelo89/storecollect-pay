@@ -160,13 +160,13 @@
 
   const tbody = document.querySelector('#cartTable tbody');
   const EXCHANGE_RATE = 17.40;
-  const priceInRands = item.price * EXCHANGE_RATE;
+  
   cart.forEach(item => {
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${item.title}</td>
       <td>${item.qty}</td>
-      <td>${item.price* EXCHANGE_RATE}</td>
+      <td>R${(item.price*EXCHANGE_RATE).toFixed(2)}</td>
     `;
     tbody.appendChild(row);
   });
