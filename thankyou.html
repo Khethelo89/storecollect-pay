@@ -166,7 +166,7 @@
     row.innerHTML = `
       <td>${item.title}</td>
       <td>${item.qty}</td>
-      <td>R + priceInRands </td>
+      <td>${item.price* EXCHANGE_RATE}</td>
     `;
     tbody.appendChild(row);
   });
