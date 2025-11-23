@@ -4,13 +4,13 @@ export default async function handler(req, res) {
 
   const { checkoutId } = req.query;
 
-  // Default GitHub Pages thank-you URL
+  // Your thank-you page URL on Vercel
   const thankyouUrl = "https://storecollect-pay.vercel.app/thankyou.html";
 
-  // If checkoutId is missing, redirect anyway
+  // If checkoutId is missing, redirect with fallback
   if (!checkoutId) {
     console.warn("checkoutId missing, redirecting to thank-you page anyway.");
-    return res.redirect(thankyouUrl);
+    return res.redirect(`${thankyouUrl}?name=Customer&total=0.00&shipping=0&orderNumber=N/A&cart=[]`);
   }
 
   try {
@@ -23,13 +23,13 @@ export default async function handler(req, res) {
     });
     const yoData = await yoRes.json();
 
-    // If payment not completed, still redirect to thank-you page
+    // If payment not completed, redirect with basic info
     if (!yoRes.ok || yoData.status !== "paid") {
       console.error("Payment not completed:", yoData);
-      return res.redirect(thankyouUrl);
+      return res.redirect(`${thankyouUrl}?name=${yoData.customer?.name || "Customer"}&total=${(yoData.amount/100 || 0).toFixed(2)}&shipping=100&orderNumber=${checkoutId}&cart=[]`);
     }
 
-    // 2️⃣ Optional: Post to Shopify (keep your current code if needed)
+    // 2️⃣ Optional: Post to Shopify (keep current logic)
     const shopifyDomain = "b007a7-f0.myshopify.com";
     const shopifyAccessToken = process.env.SHOPIFY_ACCESS_TOKEN;
 
@@ -38,10 +38,10 @@ export default async function handler(req, res) {
         email: yoData.customer?.email || "customer@example.com",
         financial_status: "paid",
         total_price: (yoData.amount / 100).toFixed(2),
-        line_items: yoData.lineItems.map(item => ({
-          title: item.displayName,
-          quantity: item.quantity,
-          price: (item.pricingDetails[0]?.price / 100 || 0).toFixed(2)
+        line_items: (yoData.lineItems || []).map(item => ({
+          title: item.displayName || "Item",
+          quantity: item.quantity || 1,
+          price: (item.pricingDetails?.[0]?.price / 100) || 0
         })),
         shipping_address: {
           first_name: yoData.customer?.name?.split(" ")[0] || "First",
@@ -67,24 +67,30 @@ export default async function handler(req, res) {
 
     console.log("Shopify order created:", await shopifyRes.json());
 
-    // 3️⃣ Redirect to thank-you page with query params (cart, total, shipping, name)
+    // 3️⃣ Build query parameters for redirect
     const query = new URLSearchParams({
       name: yoData.customer?.name || "Customer",
-      total: (yoData.amount / 100).toFixed(2),
-      shipping: 100,
+      total: (yoData.amount / 100).toFixed(2) || "0.00",
+      shipping: "100",
+      orderNumber: checkoutId || "N/A",
       cart: JSON.stringify(
-        yoData.lineItems.map(item => ({
-          title: item.displayName,
-          qty: item.quantity,
-          price: item.pricingDetails[0]?.price / 100 || 0
+        (yoData.lineItems || []).map(item => ({
+          title: item.displayName || "Item",
+          qty: item.quantity || 1,
+          price: (item.pricingDetails?.[0]?.price / 100) || 0
         }))
       )
     });
 
+    // Log the final redirect URL for debugging
+    console.log("Redirecting to:", `${thankyouUrl}?${query.toString()}`);
+
+    // 4️⃣ Redirect to thank-you page with parameters
     return res.redirect(`${thankyouUrl}?${query.toString()}`);
 
   } catch (err) {
     console.error("Yoco success error:", err);
-    return res.redirect(thankyouUrl);
+    // Fallback redirect in case of any error
+    return res.redirect(`${thankyouUrl}?name=Customer&total=0.00&shipping=100&orderNumber=${checkoutId || "N/A"}&cart=[]`);
   }
 }
