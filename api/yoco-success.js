@@ -75,7 +75,7 @@ export default async function handler(req, res) {
         line_items: yoData.lineItems.map(item => ({
           title: item.displayName,
           quantity: item.quantity,
-          price: (item.pricingDetails?.[0]?.price / 100) || 0
+          price: (item.pricingDetails?.[0]?.price / 100) || 0.toFixed(2)
         })),
         shipping_address: {
           first_name: yoData.customer.name.split(" ")[0],
