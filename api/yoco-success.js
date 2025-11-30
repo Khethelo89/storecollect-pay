@@ -89,7 +89,7 @@ export default async function handler(req, res) {
       }
     };
 
-    const shopifyRes = await fetch(`https://${shopifyDomain}/admin/api/2025-10/products.json`, {
+    const shopifyRes = await fetch(`https://${shopifyDomain}/admin/api/2025-10/orders.json`, {
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": shopifyAccessToken,
