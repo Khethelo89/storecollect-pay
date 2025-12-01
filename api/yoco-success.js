@@ -1,5 +1,7 @@
 // /api/yoco-success.js
-export default async function handler(req, res) {
+const fetch = require("node-fetch"); // make sure node-fetch is installed
+
+module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).send("Method Not Allowed");
   }
@@ -26,15 +28,14 @@ export default async function handler(req, res) {
     if (!checkoutId) {
       console.warn("checkoutId missing, redirecting with fallback values.");
       const params = req.query;
-      params.orderNumber = orderNumber; // use 4-char code even if fallback
-      return res.redirect(${thankyouUrl}?${new URLSearchParams(params).toString()});
+      params.orderNumber = orderNumber;
+      return res.redirect(`${thankyouUrl}?${new URLSearchParams(params).toString()}`);
     }
 
     // 1️⃣ Get checkout details from Yoco
-    const yoRes = await fetch(https://payments.yoco.com/api/checkouts/${checkoutId}, {
-      headers: { Authorization: Bearer ${secretKey} }
+    const yoRes = await fetch(`https://payments.yoco.com/api/checkouts/${checkoutId}`, {
+      headers: { Authorization: `Bearer ${secretKey}` }
     });
-
     let yoData = await yoRes.json();
 
     // 2️⃣ Handle sandbox / missing data
@@ -56,8 +57,8 @@ export default async function handler(req, res) {
           { displayName: "T-shirt", quantity: 2, pricingDetails: [{ price: 5000 }] },
           { displayName: "Cap", quantity: 1, pricingDetails: [{ price: 5000 }] }
         ],
-        amount: 15000,          // total in cents
-        shippingInCents: 1000   // R10 shipping
+        amount: 15000,
+        shippingInCents: 1000
       };
     }
 
@@ -71,11 +72,11 @@ export default async function handler(req, res) {
         email: yoData.customer.email,
         financial_status: "paid",
         total_price: total,
-        note: Order ID: ${orderNumber},
+        note: `Order ID: ${orderNumber}`,
         line_items: yoData.lineItems.map(item => ({
           title: item.displayName,
           quantity: item.quantity,
-          price: (item.pricingDetails?.[0]?.price / 100) || 0
+          price: ((item.pricingDetails?.[0]?.price || 0) / 100).toFixed(2)
         })),
         shipping_address: {
           first_name: yoData.customer.name.split(" ")[0],
@@ -89,7 +90,7 @@ export default async function handler(req, res) {
       }
     };
 
-    const shopifyRes = await fetch(https://${shopifyDomain}/admin/api/2025-10/products.json, {
+    const shopifyRes = await fetch(`https://${shopifyDomain}/admin/api/2025-10/orders.json`, {
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": shopifyAccessToken,
@@ -112,24 +113,23 @@ export default async function handler(req, res) {
       zip: yoData.customer.zip || "",
       shipping: shipping.toFixed(2),
       total: total,
-      orderNumber: orderNumber, // 4-character code
+      orderNumber: orderNumber,
       cart: JSON.stringify(
         yoData.lineItems.map(item => ({
           title: item.displayName,
           qty: item.quantity,
-          price: (item.pricingDetails?.[0]?.price / 100) || 0
+          price: ((item.pricingDetails?.[0]?.price || 0) / 100).toFixed(2)
         }))
       )
     });
 
-    console.log("Redirecting to thankyou page:", ${thankyouUrl}?${query.toString()});
+    console.log("Redirecting to thankyou page:", `${thankyouUrl}?${query.toString()}`);
 
-    // 6️⃣ Redirect to thankyou page
-    return res.redirect(${thankyouUrl}?${query.toString()});
+    return res.redirect(`${thankyouUrl}?${query.toString()}`);
   } catch (err) {
     console.error("Yoco success error:", err);
     return res.redirect(
-      ${thankyouUrl}?name=Customer&email=N/A&phone=&address=&city=&province=&zip=&shipping=0&total=0&orderNumber=${orderNumber}&cart=[]
+      `${thankyouUrl}?name=Customer&email=N/A&phone=&address=&city=&province=&zip=&shipping=0&total=0&orderNumber=${orderNumber}&cart=[]`
     );
   }
-}
+};
