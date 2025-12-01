@@ -1,7 +1,11 @@
 // /api/yoco-success.js
-export default async function handler(req, res) {
-  if (req.method !== "GET") {
-    return res.status(405).send("Method Not Allowed");
+// /api/yoco-success.js
+module.exports = async function handler(req, res) {
+  if (req.method !== "GET") return res.status(405).send("Method Not Allowed");
+
+  // ...rest of your code remains the same
+};
+
   }
 
   const { checkoutId } = req.query;
