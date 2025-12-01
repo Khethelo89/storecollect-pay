@@ -1,10 +1,8 @@
 // /api/yoco-success.js
-// /api/yoco-success.js
-module.exports = async function handler(req, res) {
-  if (req.method !== "GET") return res.status(405).send("Method Not Allowed");
-
-  // ...rest of your code remains the same
-};
+export default async function handler(req, res) {
+  if (req.method !== "GET") {
+    return res.status(405).send("Method Not Allowed");
+  }
 
   const { checkoutId } = req.query;
   const thankyouUrl = "https://storecollect-pay.vercel.app/thankyou.html";
@@ -29,12 +27,12 @@ module.exports = async function handler(req, res) {
       console.warn("checkoutId missing, redirecting with fallback values.");
       const params = req.query;
       params.orderNumber = orderNumber; // use 4-char code even if fallback
-      return res.redirect(`${thankyouUrl}?${new URLSearchParams(params).toString()}`);
+      return res.redirect(${thankyouUrl}?${new URLSearchParams(params).toString()});
     }
 
     // 1️⃣ Get checkout details from Yoco
-    const yoRes = await fetch(`https://payments.yoco.com/api/checkouts/${checkoutId}`, {
-      headers: { Authorization: `Bearer ${secretKey}` }
+    const yoRes = await fetch(https://payments.yoco.com/api/checkouts/${checkoutId}, {
+      headers: { Authorization: Bearer ${secretKey} }
     });
 
     let yoData = await yoRes.json();
@@ -73,11 +71,11 @@ module.exports = async function handler(req, res) {
         email: yoData.customer.email,
         financial_status: "paid",
         total_price: total,
-        note: `Order ID: ${orderNumber}`,
+        note: Order ID: ${orderNumber},
         line_items: yoData.lineItems.map(item => ({
           title: item.displayName,
           quantity: item.quantity,
-          price: (item.pricingDetails?.[0]?.price / 100) || 0.toFixed(2)
+          price: (item.pricingDetails?.[0]?.price / 100) || 0
         })),
         shipping_address: {
           first_name: yoData.customer.name.split(" ")[0],
@@ -91,7 +89,7 @@ module.exports = async function handler(req, res) {
       }
     };
 
-    const shopifyRes = await fetch(`https://${shopifyDomain}/admin/api/2025-10/orders.json`, {
+    const shopifyRes = await fetch(https://${shopifyDomain}/admin/api/2025-10/products.json, {
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": shopifyAccessToken,
@@ -124,15 +122,14 @@ module.exports = async function handler(req, res) {
       )
     });
 
-    console.log("Redirecting to thankyou page:", `${thankyouUrl}?${query.toString()}`);
+    console.log("Redirecting to thankyou page:", ${thankyouUrl}?${query.toString()});
 
     // 6️⃣ Redirect to thankyou page
-    return res.redirect(`${thankyouUrl}?${query.toString()}`);
+    return res.redirect(${thankyouUrl}?${query.toString()});
   } catch (err) {
     console.error("Yoco success error:", err);
     return res.redirect(
-      `${thankyouUrl}?name=Customer&email=N/A&phone=&address=&city=&province=&zip=&shipping=0&total=0&orderNumber=${orderNumber}&cart=[]`
+      ${thankyouUrl}?name=Customer&email=N/A&phone=&address=&city=&province=&zip=&shipping=0&total=0&orderNumber=${orderNumber}&cart=[]
     );
   }
 }
-
