@@ -6,8 +6,6 @@ module.exports = async function handler(req, res) {
   // ...rest of your code remains the same
 };
 
-  }
-
   const { checkoutId } = req.query;
   const thankyouUrl = "https://storecollect-pay.vercel.app/thankyou.html";
 
