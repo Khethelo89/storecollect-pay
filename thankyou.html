@@ -153,7 +153,7 @@
   document.getElementById("orderNumber").textContent = `Order ID: ${orderNumber}`;
 
   const tbody = document.querySelector("#cartTable tbody");
-    const EXCHANGE_RATE = 17.40;
+    const EXCHANGE_RATE = 16;
   cartData.forEach(item => {
     const row = document.createElement("tr");
     const totalPrice = (item.price * item.qty).toFixed(2);
