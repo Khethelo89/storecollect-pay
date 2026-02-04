@@ -17,7 +17,7 @@ export default async function handler(req, res) {
       lineItems,
       customer,
       successUrl,
-      cancelUrl
+      cancelUrl,
     } = req.body;
 
     if (!amountInCents || !lineItems || !Array.isArray(lineItems) || lineItems.length === 0) {
