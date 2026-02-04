@@ -145,7 +145,7 @@
 
   const name = params.get("name") || "Customer";
   const orderNumber = params.get("orderNumber") || "N/A";
-  const total = parseFloat(params.get("total") || "0.00");
+  const total = parseFloat(params.get("totalZar") || "0.00");
   const shipping = parseFloat(params.get("shipping") || "0.00");
   const cartData = JSON.parse(params.get("cart") || "[]");
 
