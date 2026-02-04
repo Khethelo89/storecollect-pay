@@ -28,7 +28,7 @@ export default async function handler(req, res) {
     const formattedLineItems = lineItems.map(item => ({
       displayName: item.name || "Unknown Product",
       quantity: item.quantity || 1,
-      pricingDetails: { price: Math.round(item.amount) || 0 }
+      pricingDetails: { price: Math.round(item.amountInCents) || 0 }
     }));
 
     const finalCancelUrl = cancelUrl?.trim() || "https://storecollect-pay.vercel.app/cancel";
