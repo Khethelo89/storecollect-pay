@@ -18,24 +18,22 @@ export default async function handler(req, res) {
       customer,
       successUrl,
       cancelUrl,
+      metadata // ✅ add this
     } = req.body;
 
     if (!amountInCents || !lineItems || !Array.isArray(lineItems) || lineItems.length === 0) {
       return res.status(400).json({ error: "Invalid request: missing amount or line items" });
     }
 
-    // Format line items for Yoco
     const formattedLineItems = lineItems.map(item => ({
       displayName: item.name || "Unknown Product",
       quantity: item.quantity || 1,
       pricingDetails: { price: Math.round(item.amount) || 0 }
     }));
 
-    // Ensure successUrl and cancelUrl are full URLs
-    const finalSuccessUrl = successUrl?.trim() || "https://storecollect-pay.vercel.app/api/yoco-success";
     const finalCancelUrl = cancelUrl?.trim() || "https://storecollect-pay.vercel.app/cancel";
+    const baseSuccessUrl = successUrl?.trim() || "https://storecollect-pay.vercel.app/api/yoco-success";
 
-    // Call Yoco Checkout API
     const yoRes = await fetch("https://payments.yoco.com/api/checkouts", {
       method: "POST",
       headers: {
@@ -46,9 +44,10 @@ export default async function handler(req, res) {
         amount: amountInCents,
         currency,
         lineItems: formattedLineItems,
-        successUrl: finalSuccessUrl,
+        successUrl: baseSuccessUrl, // ✅ temporary first
         cancelUrl: finalCancelUrl,
-        customer
+        customer,
+        metadata // ✅ store order/cart info here if needed
       })
     });
 
@@ -62,9 +61,14 @@ export default async function handler(req, res) {
       });
     }
 
-    // Return the checkout URL to the frontend
+    // ✅ Now attach checkout session ID to success URL
+    const checkoutId = yoData.id;
+    const finalSuccessUrlWithId = `${baseSuccessUrl}?checkoutId=${checkoutId}`;
+
     return res.status(200).json({
-      checkoutUrl: yoData.redirectUrl
+      checkoutUrl: yoData.redirectUrl,
+      checkoutId,
+      successUrl: finalSuccessUrlWithId
     });
 
   } catch (err) {
