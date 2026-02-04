@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Test Create Order</title>
+  </head>
+  <body>
+    <h2>Test Create Shopify Order (POST)</h2>
+    <button id="btn">Create Order</button>
+
+    <pre id="out"></pre>
+
+    <script>
+      document.getElementById("btn").addEventListener("click", async () => {
+        const out = document.getElementById("out");
+        out.textContent = "Sending request...";
+
+        const res = await fetch("/api/create-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            customer: {
+              first_name: "Khethelo",
+              last_name: "Dlamini",
+              email: "storecollect8@gmail.com"
+            },
+            items: [{ title: "Glasses Test", quantity: 1, price: "199.00" }],
+            total: "199.00",
+            yocoPaymentId: "TEST_NO_PAYMENT"
+          })
+        });
+
+        const data = await res.json();
+        out.textContent = JSON.stringify(data, null, 2);
+      });
+    </script>
+  </body>
+</html>
